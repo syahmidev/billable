@@ -57,6 +57,14 @@ class ClientController extends Controller
     {
         return Inertia::render('Tenant/Clients/Show', [
             'client' => $client,
+            'invoices' => $client->invoices()->with('items')->latest()->get()->map(fn ($inv) => [
+                'id' => $inv->id,
+                'invoice_number' => $inv->invoice_number,
+                'status' => $inv->status,
+                'issue_date' => $inv->issue_date->format('M d, Y'),
+                'due_date' => $inv->due_date->format('M d, Y'),
+                'total' => (float) $inv->total,
+            ]),
         ]);
     }
 
