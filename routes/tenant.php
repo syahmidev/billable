@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Payment\InvoicePaymentController;
+use App\Http\Controllers\Tenant\BillingController;
 use App\Http\Controllers\Tenant\ClientController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\InvoiceController;
@@ -21,6 +22,10 @@ Route::middleware([
 
     Route::middleware(['auth', 'tenant.member', 'subscribed'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard');
+
+        Route::get('/billing', [BillingController::class, 'index'])->name('tenant.billing.index');
+        Route::post('/billing/plans/{plan}/subscribe', [BillingController::class, 'subscribe'])->name('tenant.billing.subscribe');
+        Route::get('/billing/portal', [BillingController::class, 'portal'])->name('tenant.billing.portal');
 
         Route::resource('clients', ClientController::class)->names([
             'index' => 'tenant.clients.index',

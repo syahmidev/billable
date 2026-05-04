@@ -8,12 +8,17 @@ use Laravel\Cashier\Checkout;
 
 class StartSubscription
 {
-    public function handle(User $user, Plan $plan): Checkout
-    {
-        return $user->newSubscription('default', $plan->stripe_price_id)
+    public function handle(
+        User $user,
+        Plan $plan,
+        ?string $successUrl = null,
+        ?string $cancelUrl = null,
+    ): Checkout {
+        return $user
+            ->newSubscription('default', $plan->stripe_price_id)
             ->checkout([
-                'success_url' => route('billing.success') . '?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => route('plans'),
+                'success_url' => $successUrl ?? route('billing.success').'?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => $cancelUrl ?? route('plans'),
             ]);
     }
 }
