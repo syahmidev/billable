@@ -1,0 +1,92 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Tenant;
+
+use App\Actions\Client\CreateClient;
+use App\Actions\Client\UpdateClient;
+use App\Http\Controllers\Controller;
+use App\Models\Client;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class ClientController extends Controller
+{
+    public function index(Request $request): Response
+    {
+        $clients = Client::query()
+            ->when($request->search, fn ($q, $s) => $q
+                ->where('name', 'ilike', "%{$s}%")
+                ->orWhere('email', 'ilike', "%{$s}%")
+                ->orWhere('company', 'ilike', "%{$s}%"))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('Tenant/Clients/Index', [
+            'clients' => $clients,
+            'filters' => $request->only('search'),
+        ]);
+    }
+
+    public function create(): Response
+    {
+        return Inertia::render('Tenant/Clients/Create');
+    }
+
+    public function store(Request $request, CreateClient $action): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'company' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $action->handle($data);
+
+        return redirect()->route('tenant.clients.index')->with('success', 'Client created.');
+    }
+
+    public function show(Client $client): Response
+    {
+        return Inertia::render('Tenant/Clients/Show', [
+            'client' => $client,
+        ]);
+    }
+
+    public function edit(Client $client): Response
+    {
+        return Inertia::render('Tenant/Clients/Edit', [
+            'client' => $client,
+        ]);
+    }
+
+    public function update(Request $request, Client $client, UpdateClient $action): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'company' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $action->handle($client, $data);
+
+        return redirect()->route('tenant.clients.show', $client)->with('success', 'Client updated.');
+    }
+
+    public function destroy(Client $client): RedirectResponse
+    {
+        $client->delete();
+
+        return redirect()->route('tenant.clients.index')->with('success', 'Client archived.');
+    }
+}
