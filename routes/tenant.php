@@ -15,12 +15,12 @@ Route::middleware([
     'web',
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
-])->group(function () {
+])->group(function (): void {
     // Public invoice payment pages — no auth required
     Route::get('/pay/{token}', [InvoicePaymentController::class, 'show'])->name('tenant.invoice.pay');
     Route::post('/pay/{token}/intent', [InvoicePaymentController::class, 'createIntent'])->name('tenant.invoice.intent');
 
-    Route::middleware(['auth', 'tenant.member', 'subscribed'])->group(function () {
+    Route::middleware(['auth', 'tenant.member', 'subscribed'])->group(function (): void {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard');
 
         Route::get('/billing', [BillingController::class, 'index'])->name('tenant.billing.index');

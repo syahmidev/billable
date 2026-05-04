@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Filament\Widgets;
 
 use App\Models\Tenant;
+use Filament\Actions\Action;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Actions\Action;
 use Filament\Widgets\TableWidget as BaseWidget;
 
 class LatestTenantsWidget extends BaseWidget

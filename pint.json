@@ -1,3 +1,16 @@
 {
-    "preset": "laravel"
+    "preset": "laravel",
+    "rules": {
+        "declare_strict_types": true,
+        "modernize_types_casting": true,
+        "no_superfluous_elseif": true,
+        "no_useless_else": true,
+        "ordered_imports": true,
+        "strict_comparison": true,
+        "ternary_to_null_coalescing": true,
+        "visibility_required": {
+            "elements": ["const", "method", "property"]
+        },
+        "void_return": true
+    }
 }

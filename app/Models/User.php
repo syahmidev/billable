@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Concerns\HasTenantAccess;
@@ -18,7 +20,7 @@ use Laravel\Cashier\Billable;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, Billable, HasTenantAccess;
+    use Billable, HasFactory, HasTenantAccess, Notifiable;
 
     protected $connection = 'pgsql';
 

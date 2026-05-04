@@ -1,5 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
+use App\Http\Middleware\EnsureSubscribed;
+use App\Http\Middleware\EnsureTenantMember;
+use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,12 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->web(append: [
-            \App\Http\Middleware\HandleInertiaRequests::class,
+            HandleInertiaRequests::class,
         ]);
 
         $middleware->alias([
-            'tenant.member' => \App\Http\Middleware\EnsureTenantMember::class,
-            'subscribed' => \App\Http\Middleware\EnsureSubscribed::class,
+            'tenant.member' => EnsureTenantMember::class,
+            'subscribed' => EnsureSubscribed::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

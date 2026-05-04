@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
+        Schema::table('invoices', function (Blueprint $table): void {
             $table->uuid('payment_token')->nullable()->unique()->after('sent_at');
             $table->string('stripe_payment_intent_id')->nullable()->after('payment_token');
         });
@@ -18,7 +18,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
+        Schema::table('invoices', function (Blueprint $table): void {
             $table->dropColumn(['payment_token', 'stripe_payment_intent_id']);
         });
     }
