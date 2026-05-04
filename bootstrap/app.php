@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'tenant.member' => \App\Http\Middleware\EnsureTenantMember::class,
+            'subscribed' => \App\Http\Middleware\EnsureSubscribed::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

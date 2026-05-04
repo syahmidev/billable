@@ -24,7 +24,7 @@ class CreateWorkspace
         return Domain::where('domain', $domain)->exists();
     }
 
-    public function handle(User $user, string $workspaceName, string $subdomain): string
+    public function handle(User $user, string $workspaceName, string $subdomain): void
     {
         $domain = $this->buildDomain($subdomain);
 
@@ -32,8 +32,6 @@ class CreateWorkspace
         $tenant->domains()->create(['domain' => $domain]);
 
         $user->update(['tenant_id' => $tenant->id, 'role' => 'owner']);
-
-        return $this->tenantUrl($domain);
     }
 
     private function buildDomain(string $subdomain): string

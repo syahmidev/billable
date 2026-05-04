@@ -12,7 +12,7 @@ Route::middleware([
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
 ])->group(function () {
-    Route::middleware(['auth', 'tenant.member'])->group(function () {
+    Route::middleware(['auth', 'tenant.member', 'subscribed'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard');
     });
 });

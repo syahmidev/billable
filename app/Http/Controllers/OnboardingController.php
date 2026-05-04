@@ -32,8 +32,8 @@ class OnboardingController extends Controller
             return back()->withErrors(['subdomain' => 'This subdomain is not available.']);
         }
 
-        $url = $action->handle($request->user(), $request->workspace_name, $request->subdomain);
+        $action->handle($request->user(), $request->workspace_name, $request->subdomain);
 
-        return Inertia::location($url);
+        return redirect()->route('plans');
     }
 }
