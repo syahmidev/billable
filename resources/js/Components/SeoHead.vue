@@ -1,36 +1,46 @@
 <script setup>
-import { Head, usePage } from '@inertiajs/vue3'
-import { computed } from 'vue'
+    import { Head, usePage } from '@inertiajs/vue3'
+    import { computed } from 'vue'
 
-const props = defineProps({
-    title: { type: String, default: null },
-    description: { type: String, default: null },
-    canonical: { type: String, default: null },
-    robots: { type: String, default: 'index, follow' },
-    type: { type: String, default: 'website' },
-    image: { type: String, default: null },
-})
+    const props = defineProps({
+        title: { type: String, default: null },
+        description: { type: String, default: null },
+        canonical: { type: String, default: null },
+        robots: { type: String, default: 'index, follow' },
+        type: { type: String, default: 'website' },
+        image: { type: String, default: null },
+        schema: { type: [Object, Array, String], default: null },
+    })
 
-const page = usePage()
+    const page = usePage()
 
-const seo = computed(() => page.props.seo ?? {})
-const pageTitle = computed(() => props.title ?? seo.value.title ?? 'Billable')
-const description = computed(() => props.description ?? seo.value.description ?? '')
-const siteName = computed(() => seo.value.site_name ?? 'Billable')
-const fullTitle = computed(() => (pageTitle.value === siteName.value ? siteName.value : `${pageTitle.value} — ${siteName.value}`))
-const imageUrl = computed(() => absoluteUrl(props.image ?? seo.value.image))
-const canonicalUrl = computed(() => absoluteUrl(props.canonical ?? seo.value.current_url))
-const twitterSite = computed(() => seo.value.twitter_site)
+    const seo = computed(() => page.props.seo ?? {})
+    const pageTitle = computed(() => props.title ?? seo.value.title ?? 'Billable')
+    const description = computed(() => props.description ?? seo.value.description ?? '')
+    const siteName = computed(() => seo.value.site_name ?? 'Billable')
+    const fullTitle = computed(() =>
+        pageTitle.value === siteName.value
+            ? siteName.value
+            : `${pageTitle.value} — ${siteName.value}`,
+    )
+    const imageUrl = computed(() => absoluteUrl(props.image ?? seo.value.image))
+    const canonicalUrl = computed(() => absoluteUrl(props.canonical ?? seo.value.current_url))
+    const twitterSite = computed(() => seo.value.twitter_site)
+    const schemaJson = computed(() => {
+        if (!props.schema) return null
 
-function absoluteUrl(url) {
-    if (!url) return null
-    if (/^https?:\/\//i.test(url)) return url
+        return typeof props.schema === 'string' ? props.schema : JSON.stringify(props.schema)
+    })
 
-    const baseUrl = String(seo.value.base_url ?? '').replace(/\/$/, '')
-    const path = String(url).startsWith('/') ? url : `/${url}`
+    function absoluteUrl(url) {
+        if (!url) return null
+        if (/^https?:\/\//i.test(url)) return url
 
-    return `${baseUrl}${path}`
-}
+        const baseUrl = String(seo.value.base_url ?? '').replace(/\/$/, '')
+        const path = String(url).startsWith('/') ? url : `/${url}`
+
+        return `${baseUrl}${path}`
+    }
 </script>
 
 <template>
@@ -51,5 +61,9 @@ function absoluteUrl(url) {
         <meta name="twitter:description" :content="description" />
         <meta v-if="imageUrl" name="twitter:image" :content="imageUrl" />
         <meta v-if="twitterSite" name="twitter:site" :content="twitterSite" />
+
+        <component :is="'script'" v-if="schemaJson" type="application/ld+json">
+            {{ schemaJson }}
+        </component>
     </Head>
 </template>

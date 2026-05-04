@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Actions\Auth\LoginUser;
 use App\Actions\Auth\RegisterUser;
+use App\Enums\PlanSlug;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
@@ -16,14 +17,22 @@ use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class AuthController extends Controller
 {
-    public function showRegister(): Response
+    public function showRegister(Request $request): Response
     {
-        return Inertia::render('Auth/Register');
+        $selectedPlan = PlanSlug::tryFrom((string) $request->query('plan'))?->value;
+
+        return Inertia::render('Auth/Register', [
+            'selectedPlan' => $selectedPlan,
+        ]);
     }
 
     public function register(RegisterRequest $request, RegisterUser $action): RedirectResponse
     {
         $data = $request->validated();
+
+        if (isset($data['plan'])) {
+            $request->session()->put('intended_plan', $data['plan']);
+        }
 
         $action->handle($data['name'], $data['email'], $data['password']);
 

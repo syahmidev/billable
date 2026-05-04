@@ -26,6 +26,10 @@ class OnboardingController extends Controller
 
         $action->handle($request->user(), $data['workspace_name'], $data['subdomain']);
 
-        return redirect()->route('plans');
+        $intendedPlan = $request->session()->pull('intended_plan');
+
+        return redirect()->route('plans', array_filter([
+            'plan' => $intendedPlan,
+        ]));
     }
 }

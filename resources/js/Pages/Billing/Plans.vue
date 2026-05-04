@@ -1,23 +1,32 @@
 <script setup>
-import SeoHead from '@/Components/SeoHead.vue'
-import { usePage, router } from '@inertiajs/vue3'
-import { ref } from 'vue'
+    import SeoHead from '@/Components/SeoHead.vue'
+    import { usePage, router } from '@inertiajs/vue3'
+    import { ref } from 'vue'
 
-const props = defineProps({
-    plans: Array,
-})
-
-const page = usePage()
-const user = page.props.auth.user
-
-const loadingPlan = ref(null)
-
-function subscribe(plan) {
-    loadingPlan.value = plan.id
-    router.post(`/plans/${plan.id}/subscribe`, {}, {
-        onFinish: () => loadingPlan.value = null,
+    const props = defineProps({
+        plans: Array,
+        selectedPlan: { type: String, default: null },
     })
-}
+
+    const page = usePage()
+    const user = page.props.auth.user
+
+    const loadingPlan = ref(null)
+
+    function subscribe(plan) {
+        loadingPlan.value = plan.id
+        router.post(
+            `/plans/${plan.id}/subscribe`,
+            {},
+            {
+                onFinish: () => (loadingPlan.value = null),
+            },
+        )
+    }
+
+    function isSelectedPlan(plan) {
+        return props.selectedPlan === plan.slug
+    }
 </script>
 
 <template>
@@ -43,19 +52,39 @@ function subscribe(plan) {
                     v-for="plan in plans"
                     :key="plan.id"
                     class="relative bg-gray-900 border rounded-2xl p-7 flex flex-col"
-                    :class="plan.slug === 'pro' ? 'border-violet-500' : 'border-white/10'"
+                    :class="
+                        isSelectedPlan(plan)
+                            ? 'border-emerald-400 ring-1 ring-emerald-400/40'
+                            : plan.slug === 'pro'
+                              ? 'border-violet-500'
+                              : 'border-white/10'
+                    "
                 >
                     <!-- Popular badge -->
-                    <div v-if="plan.slug === 'pro'" class="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span class="bg-violet-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                    <div
+                        v-if="plan.slug === 'pro'"
+                        class="absolute -top-3 left-1/2 -translate-x-1/2"
+                    >
+                        <span
+                            class="bg-violet-500 text-white text-xs font-semibold px-3 py-1 rounded-full"
+                        >
                             Most popular
+                        </span>
+                    </div>
+                    <div v-if="isSelectedPlan(plan)" class="absolute right-4 top-4">
+                        <span
+                            class="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300"
+                        >
+                            Selected
                         </span>
                     </div>
 
                     <div class="mb-6">
                         <h2 class="text-lg font-semibold text-white mb-1">{{ plan.name }}</h2>
                         <div class="flex items-baseline gap-1">
-                            <span class="text-3xl font-bold text-white">{{ plan.is_free ? 'Free' : '$' + plan.price }}</span>
+                            <span class="text-3xl font-bold text-white">{{
+                                plan.is_free ? 'Free' : '$' + plan.price
+                            }}</span>
                             <span v-if="!plan.is_free" class="text-sm text-gray-500">/month</span>
                         </div>
                     </div>
@@ -66,8 +95,18 @@ function subscribe(plan) {
                             :key="feature"
                             class="flex items-start gap-2.5 text-sm text-gray-300"
                         >
-                            <svg class="w-4 h-4 text-violet-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            <svg
+                                class="w-4 h-4 text-violet-400 mt-0.5 shrink-0"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M5 13l4 4L19 7"
+                                />
                             </svg>
                             {{ feature }}
                         </li>
@@ -77,9 +116,11 @@ function subscribe(plan) {
                         @click="subscribe(plan)"
                         :disabled="loadingPlan !== null"
                         class="w-full py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        :class="plan.slug === 'pro'
-                            ? 'bg-violet-600 hover:bg-violet-500 text-white'
-                            : 'bg-white/5 hover:bg-white/10 text-white border border-white/10'"
+                        :class="
+                            plan.slug === 'pro'
+                                ? 'bg-violet-600 hover:bg-violet-500 text-white'
+                                : 'bg-white/5 hover:bg-white/10 text-white border border-white/10'
+                        "
                     >
                         <span v-if="loadingPlan === plan.id">Redirecting...</span>
                         <span v-else-if="plan.is_free">Get started free</span>
@@ -90,7 +131,12 @@ function subscribe(plan) {
 
             <p class="text-center text-xs text-gray-600 mt-8">
                 Logged in as {{ user.email }} ·
-                <button @click="router.post('/logout')" class="text-gray-500 hover:text-white transition-colors">Sign out</button>
+                <button
+                    @click="router.post('/logout')"
+                    class="text-gray-500 hover:text-white transition-colors"
+                >
+                    Sign out
+                </button>
             </p>
         </div>
     </div>

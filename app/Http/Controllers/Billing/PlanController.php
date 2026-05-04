@@ -18,6 +18,7 @@ class PlanController extends Controller
     public function index(Request $request): Response|RedirectResponse
     {
         $user = $request->user();
+        $selectedPlan = PlanSlug::tryFrom((string) $request->query('plan'))?->value;
 
         if ($user->plan === PlanSlug::Free->value || $user->subscribed('default')) {
             if ($url = $user->tenantUrl()) {
@@ -35,6 +36,7 @@ class PlanController extends Controller
                 'features' => $plan->features,
                 'is_free' => $plan->isFree(),
             ]),
+            'selectedPlan' => $selectedPlan,
         ]);
     }
 
