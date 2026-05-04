@@ -24,7 +24,7 @@ function submit() {
 </script>
 
 <template>
-    <AuthLayout>
+    <AuthLayout title="Set Up Workspace">
         <h1 class="text-xl font-semibold text-white mb-1">Set up your workspace</h1>
         <p class="text-sm text-gray-400 mb-6">This is where your team will manage invoices</p>
 

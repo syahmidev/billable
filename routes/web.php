@@ -1,11 +1,17 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Billing\PlanController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\Seo\RobotsController;
+use App\Http\Controllers\Seo\SitemapController;
 use App\Http\Controllers\Stripe\InvoiceWebhookController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Cashier\Http\Controllers\WebhookController;
+
+Route::get('/robots.txt', RobotsController::class)->name('robots');
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
@@ -25,7 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/billing/portal', [PlanController::class, 'portal'])->name('billing.portal');
 });
 
-Route::post('/stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookController::class, 'handleWebhook'])
+Route::post('/stripe/webhook', [WebhookController::class, 'handleWebhook'])
     ->name('cashier.webhook');
 
 Route::post('/stripe/invoice-webhook', [InvoiceWebhookController::class, 'handle'])

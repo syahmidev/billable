@@ -1,6 +1,7 @@
 <script setup>
-import AuthLayout from '@/Layouts/AuthLayout.vue'
-import { useForm, usePage, router } from '@inertiajs/vue3'
+import SeoHead from '@/Components/SeoHead.vue'
+import { usePage, router } from '@inertiajs/vue3'
+import { ref } from 'vue'
 
 const props = defineProps({
     plans: Array,
@@ -19,11 +20,14 @@ function subscribe(plan) {
 }
 </script>
 
-<script>
-import { ref } from 'vue'
-</script>
-
 <template>
+    <SeoHead
+        title="Choose Your Plan"
+        description="Choose a Billable subscription plan for your workspace."
+        canonical="/plans"
+        robots="noindex, nofollow"
+    />
+
     <div class="min-h-screen bg-gray-950 px-4 py-16">
         <div class="max-w-5xl mx-auto">
             <div class="text-center mb-12">

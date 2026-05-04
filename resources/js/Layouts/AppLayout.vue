@@ -1,12 +1,22 @@
 <script setup>
-import { ref } from 'vue'
-import { usePage, router } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
+import { Head, usePage, router } from '@inertiajs/vue3'
 
 const page = usePage()
 const user = page.props.auth.user
 const workspace = page.props.workspace
 
 const sidebarOpen = ref(false)
+
+const headTitle = computed(() => {
+    if (page.url.startsWith('/billing')) return 'Billing'
+    if (page.url.startsWith('/clients/create')) return 'New Client'
+    if (page.url.startsWith('/clients')) return 'Clients'
+    if (page.url.startsWith('/invoices/create')) return 'New Invoice'
+    if (page.url.startsWith('/invoices')) return 'Invoices'
+
+    return 'Dashboard'
+})
 
 function logout() {
     router.post('/logout')
@@ -41,6 +51,10 @@ const navItems = [
 </script>
 
 <template>
+    <Head :title="headTitle">
+        <meta name="robots" content="noindex, nofollow" />
+    </Head>
+
     <div class="min-h-screen bg-gray-950">
         <!-- Mobile overlay -->
         <Transition

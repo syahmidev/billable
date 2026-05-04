@@ -1,4 +1,5 @@
 <script setup>
+import SeoHead from '@/Components/SeoHead.vue'
 import { Link } from '@inertiajs/vue3'
 
 const props = defineProps({
@@ -48,6 +49,12 @@ function isPro(plan) {
 </script>
 
 <template>
+    <SeoHead
+        title="Online Invoicing for Small Teams"
+        description="Billable gives teams a dedicated workspace to manage clients, send professional invoices, and collect Stripe payments online."
+        canonical="/"
+    />
+
     <div class="min-h-screen bg-gray-950 text-white">
         <!-- Nav -->
         <nav class="border-b border-white/10 px-6 py-4">
@@ -112,7 +119,7 @@ function isPro(plan) {
 
         <!-- Social proof strip -->
         <div class="border-y border-white/5 bg-white/[0.02] px-6 py-5">
-            <div class="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm text-gray-500">
+            <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm text-gray-500">
                 <span>Laravel 13</span>
                 <span class="text-gray-700">·</span>
                 <span>Inertia.js + Vue 3</span>
@@ -232,7 +239,7 @@ function isPro(plan) {
                     <span class="text-sm font-medium text-gray-400">billable</span>
                 </div>
                 <p class="text-xs text-gray-600">
-                    Built with Laravel 13 · Inertia.js · Vue 3 · Stripe · Filament v5
+                    Built with <span class="text-violet-400">♥</span> by Syahmi & Miyu
                 </p>
             </div>
         </footer>

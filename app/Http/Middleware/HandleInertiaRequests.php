@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\AppUrl;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -29,6 +30,15 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
+            ],
+            'seo' => [
+                'site_name' => config('seo.site_name'),
+                'title' => config('seo.title'),
+                'description' => config('seo.description'),
+                'image' => config('seo.image'),
+                'twitter_site' => config('seo.twitter_site'),
+                'base_url' => rtrim(AppUrl::central('/'), '/'),
+                'current_url' => $request->url(),
             ],
         ]);
     }

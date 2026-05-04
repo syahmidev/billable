@@ -85,7 +85,7 @@ async function pay() {
 </script>
 
 <template>
-    <PaymentLayout>
+    <PaymentLayout :title="`Pay ${invoice.invoice_number}`">
         <!-- Invoice summary -->
         <div class="bg-gray-900 border border-white/10 rounded-xl p-6 mb-5">
             <div class="flex items-start justify-between mb-4">

@@ -16,7 +16,7 @@ function submit() {
 </script>
 
 <template>
-    <AuthLayout>
+    <AuthLayout title="Sign In">
         <h1 class="text-xl font-semibold text-white mb-1">Welcome back</h1>
         <p class="text-sm text-gray-400 mb-6">Sign in to your workspace</p>
 

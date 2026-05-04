@@ -1,4 +1,16 @@
+<script setup>
+import { Head } from '@inertiajs/vue3'
+
+defineProps({
+    title: { type: String, default: 'Secure Invoice Payment' },
+})
+</script>
+
 <template>
+    <Head :title="title">
+        <meta name="robots" content="noindex, nofollow" />
+    </Head>
+
     <div class="min-h-screen bg-gray-950 flex flex-col">
         <header class="border-b border-white/10 px-6 py-4">
             <div class="max-w-2xl mx-auto flex items-center justify-between">

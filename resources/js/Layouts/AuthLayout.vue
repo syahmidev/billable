@@ -1,7 +1,16 @@
 <script setup>
+import { Head } from '@inertiajs/vue3'
+
+defineProps({
+    title: { type: String, default: 'Account' },
+})
 </script>
 
 <template>
+    <Head :title="title">
+        <meta name="robots" content="noindex, nofollow" />
+    </Head>
+
     <div class="min-h-screen bg-gray-950 flex items-center justify-center px-4">
         <div class="w-full max-w-md">
             <div class="text-center mb-8">

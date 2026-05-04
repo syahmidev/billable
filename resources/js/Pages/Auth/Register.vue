@@ -17,7 +17,7 @@ function submit() {
 </script>
 
 <template>
-    <AuthLayout>
+    <AuthLayout title="Create Account">
         <h1 class="text-xl font-semibold text-white mb-1">Create your account</h1>
         <p class="text-sm text-gray-400 mb-6">Start sending invoices in minutes</p>
 
