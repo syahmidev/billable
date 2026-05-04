@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Billing\PlanController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\Stripe\InvoiceWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -25,5 +26,8 @@ Route::middleware('auth')->group(function () {
 
 Route::post('/stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookController::class, 'handleWebhook'])
     ->name('cashier.webhook');
+
+Route::post('/stripe/invoice-webhook', [InvoiceWebhookController::class, 'handle'])
+    ->name('stripe.invoice.webhook');
 
 Route::get('/', fn () => redirect()->route('login'));

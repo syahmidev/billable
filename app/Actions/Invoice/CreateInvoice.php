@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Invoice;
 
 use App\Models\Invoice;
+use Illuminate\Support\Str;
 
 class CreateInvoice
 {
@@ -25,6 +26,7 @@ class CreateInvoice
             'tax_percent' => $data['tax_percent'] ?? 0,
             'total' => $subtotal - $discountAmount + $taxAmount,
             'notes' => $data['notes'] ?? null,
+            'payment_token' => (string) Str::uuid(),
         ]);
 
         foreach ($data['items'] as $item) {

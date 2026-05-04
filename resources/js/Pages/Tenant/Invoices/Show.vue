@@ -1,11 +1,21 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { router, usePage } from '@inertiajs/vue3'
+import { ref } from 'vue'
 
 const props = defineProps({
     invoice: Object,
     workspaceName: String,
+    paymentUrl: String,
 })
+
+const copied = ref(false)
+
+function copyPaymentLink() {
+    navigator.clipboard.writeText(props.paymentUrl)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+}
 
 const page = usePage()
 
@@ -175,6 +185,31 @@ function fmt(n) { return Number(n).toFixed(2) }
                 <div v-if="invoice.notes" class="px-6 py-5 border-t border-white/10">
                     <p class="text-xs text-gray-600 uppercase tracking-wider mb-2">Notes</p>
                     <p class="text-sm text-gray-400 whitespace-pre-line">{{ invoice.notes }}</p>
+                </div>
+            </div>
+
+            <!-- Payment link -->
+            <div v-if="paymentUrl && invoice.status !== 'paid' && invoice.status !== 'cancelled'" class="mt-5 bg-gray-900 border border-white/10 rounded-xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <p class="text-sm font-medium text-white">Payment Link</p>
+                        <p class="text-xs text-gray-500 mt-0.5">Share this link with your client to collect payment online</p>
+                    </div>
+                    <button
+                        @click="copyPaymentLink"
+                        class="inline-flex items-center gap-2 px-3.5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors"
+                    >
+                        <svg v-if="!copied" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                        <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {{ copied ? 'Copied!' : 'Copy Link' }}
+                    </button>
+                </div>
+                <div class="bg-gray-800 border border-white/10 rounded-lg px-3.5 py-2.5">
+                    <p class="text-xs text-gray-400 font-mono truncate">{{ paymentUrl }}</p>
                 </div>
             </div>
         </div>

@@ -1,0 +1,66 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Stripe;
+
+use App\Actions\Invoice\MarkInvoicePaid;
+use App\Http\Controllers\Controller;
+use App\Models\Invoice;
+use App\Models\Tenant;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Stancl\Tenancy\Facades\Tenancy;
+use Stripe\Exception\SignatureVerificationException;
+use Stripe\Webhook;
+
+class InvoiceWebhookController extends Controller
+{
+    public function handle(Request $request, MarkInvoicePaid $action): Response
+    {
+        $payload = $request->getContent();
+        $sigHeader = $request->header('Stripe-Signature');
+
+        try {
+            $event = Webhook::constructEvent(
+                $payload,
+                $sigHeader,
+                config('cashier.webhook.secret')
+            );
+        } catch (SignatureVerificationException) {
+            return response('Invalid signature.', 400);
+        }
+
+        if ($event->type !== 'payment_intent.succeeded') {
+            return response('Event ignored.', 200);
+        }
+
+        $paymentIntent = $event->data->object;
+        $tenantId = $paymentIntent->metadata->tenant_id ?? null;
+        $invoiceId = $paymentIntent->metadata->invoice_id ?? null;
+
+        if (! $tenantId || ! $invoiceId) {
+            return response('Missing metadata.', 200);
+        }
+
+        $tenant = Tenant::find($tenantId);
+
+        if (! $tenant) {
+            return response('Tenant not found.', 200);
+        }
+
+        Tenancy::initialize($tenant);
+
+        try {
+            $invoice = Invoice::find($invoiceId);
+
+            if ($invoice && $invoice->status !== Invoice::STATUS_PAID) {
+                $action->handle($invoice->load('client', 'items'), $tenant->name ?? 'billable');
+            }
+        } finally {
+            Tenancy::end();
+        }
+
+        return response('Webhook handled.', 200);
+    }
+}

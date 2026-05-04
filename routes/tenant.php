@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Payment\InvoicePaymentController;
 use App\Http\Controllers\Tenant\ClientController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\InvoiceController;
@@ -14,6 +15,10 @@ Route::middleware([
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
 ])->group(function () {
+    // Public invoice payment pages — no auth required
+    Route::get('/pay/{token}', [InvoicePaymentController::class, 'show'])->name('tenant.invoice.pay');
+    Route::post('/pay/{token}/intent', [InvoicePaymentController::class, 'createIntent'])->name('tenant.invoice.intent');
+
     Route::middleware(['auth', 'tenant.member', 'subscribed'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard');
 

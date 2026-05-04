@@ -56,6 +56,11 @@ class InvoiceController extends Controller
     {
         $invoice->load('client', 'items');
 
+        $domain = tenant()->domains->first()?->domain;
+        $paymentUrl = ($domain && $invoice->payment_token)
+            ? "https://{$domain}/pay/{$invoice->payment_token}"
+            : null;
+
         return Inertia::render('Tenant/Invoices/Show', [
             'invoice' => [
                 ...$invoice->toArray(),
@@ -63,6 +68,7 @@ class InvoiceController extends Controller
                 'tax_amount' => round($invoice->taxAmount(), 2),
             ],
             'workspaceName' => tenant('name'),
+            'paymentUrl' => $paymentUrl,
         ]);
     }
 
