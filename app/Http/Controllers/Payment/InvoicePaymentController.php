@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Payment;
 
 use App\Actions\Invoice\CreatePaymentIntent;
+use App\Enums\InvoiceStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use Illuminate\Http\JsonResponse;
@@ -42,14 +43,14 @@ class InvoicePaymentController extends Controller
             ],
             'workspaceName' => tenant('name'),
             'stripeKey' => config('cashier.key'),
-            'alreadyPaid' => $invoice->status === 'paid',
+            'alreadyPaid' => $invoice->status === InvoiceStatus::Paid->value,
         ]);
     }
 
     public function createIntent(string $token, CreatePaymentIntent $action): JsonResponse
     {
         $invoice = Invoice::where('payment_token', $token)
-            ->whereIn('status', ['sent', 'overdue'])
+            ->whereIn('status', InvoiceStatus::payableValues())
             ->firstOrFail();
 
         $clientSecret = $action->handle($invoice);

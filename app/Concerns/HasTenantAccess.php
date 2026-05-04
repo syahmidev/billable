@@ -2,7 +2,9 @@
 
 namespace App\Concerns;
 
+use App\Enums\UserRole;
 use App\Models\Tenant;
+use App\Support\AppUrl;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 trait HasTenantAccess
@@ -14,7 +16,7 @@ trait HasTenantAccess
 
     public function isOwner(): bool
     {
-        return $this->role === 'owner';
+        return $this->role === UserRole::Owner->value;
     }
 
     public function belongsToTenant(string $tenantId): bool
@@ -30,8 +32,6 @@ trait HasTenantAccess
             return null;
         }
 
-        $scheme = parse_url(config('app.url'), PHP_URL_SCHEME);
-
-        return "{$scheme}://{$domain}{$path}";
+        return AppUrl::tenant($domain, $path);
     }
 }

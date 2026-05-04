@@ -16,7 +16,7 @@ class CreatePaymentIntent
 
         $intent = PaymentIntent::create([
             'amount' => (int) round((float) $invoice->total * 100),
-            'currency' => 'usd',
+            'currency' => strtolower((string) config('cashier.currency', 'usd')),
             'metadata' => [
                 'invoice_id' => $invoice->id,
                 'tenant_id' => tenant('id'),

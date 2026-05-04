@@ -2,8 +2,10 @@
 
 namespace App\Actions\Tenant;
 
+use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\AppUrl;
 use Stancl\Tenancy\Database\Models\Domain;
 
 class CreateWorkspace
@@ -15,36 +17,22 @@ class CreateWorkspace
 
     public function isSubdomainTaken(string $subdomain): bool
     {
-        if (in_array($subdomain, self::RESERVED_SUBDOMAINS)) {
+        if (in_array($subdomain, self::RESERVED_SUBDOMAINS, true)) {
             return true;
         }
 
-        $domain = $this->buildDomain($subdomain);
+        $domain = AppUrl::tenantDomain($subdomain);
 
         return Domain::where('domain', $domain)->exists();
     }
 
     public function handle(User $user, string $workspaceName, string $subdomain): void
     {
-        $domain = $this->buildDomain($subdomain);
+        $domain = AppUrl::tenantDomain($subdomain);
 
         $tenant = Tenant::create(['name' => $workspaceName]);
         $tenant->domains()->create(['domain' => $domain]);
 
-        $user->update(['tenant_id' => $tenant->id, 'role' => 'owner']);
-    }
-
-    private function buildDomain(string $subdomain): string
-    {
-        $host = parse_url(config('app.url'), PHP_URL_HOST);
-
-        return "{$subdomain}.{$host}";
-    }
-
-    private function tenantUrl(string $domain): string
-    {
-        $scheme = parse_url(config('app.url'), PHP_URL_SCHEME);
-
-        return "{$scheme}://{$domain}/dashboard";
+        $user->update(['tenant_id' => $tenant->id, 'role' => UserRole::Owner->value]);
     }
 }

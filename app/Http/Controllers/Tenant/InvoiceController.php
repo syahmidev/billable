@@ -8,8 +8,10 @@ use App\Actions\Invoice\CreateInvoice;
 use App\Actions\Invoice\SendInvoice;
 use App\Actions\Invoice\UpdateInvoice;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tenant\SaveInvoiceRequest;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Support\AppUrl;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,10 +46,9 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function store(Request $request, CreateInvoice $action): RedirectResponse
+    public function store(SaveInvoiceRequest $request, CreateInvoice $action): RedirectResponse
     {
-        $data = $this->validated($request);
-        $invoice = $action->handle($data);
+        $invoice = $action->handle($request->validated());
 
         return redirect()->route('tenant.invoices.show', $invoice)->with('success', 'Invoice created.');
     }
@@ -58,7 +59,7 @@ class InvoiceController extends Controller
 
         $domain = tenant()->domains->first()?->domain;
         $paymentUrl = ($domain && $invoice->payment_token)
-            ? "https://{$domain}/pay/{$invoice->payment_token}"
+            ? AppUrl::tenant($domain, "/pay/{$invoice->payment_token}")
             : null;
 
         return Inertia::render('Tenant/Invoices/Show', [
@@ -82,10 +83,9 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function update(Request $request, Invoice $invoice, UpdateInvoice $action): RedirectResponse
+    public function update(SaveInvoiceRequest $request, Invoice $invoice, UpdateInvoice $action): RedirectResponse
     {
-        $data = $this->validated($request);
-        $action->handle($invoice, $data);
+        $action->handle($invoice, $request->validated());
 
         return redirect()->route('tenant.invoices.show', $invoice)->with('success', 'Invoice updated.');
     }
@@ -102,7 +102,7 @@ class InvoiceController extends Controller
         $action->handle($invoice, tenant('name'));
 
         $message = $invoice->client->email
-            ? 'Invoice sent to ' . $invoice->client->email
+            ? 'Invoice sent to '.$invoice->client->email
             : 'Invoice marked as sent (no client email on file).';
 
         return redirect()->route('tenant.invoices.show', $invoice)->with('success', $message);
@@ -118,21 +118,5 @@ class InvoiceController extends Controller
         ]);
 
         return $pdf->download("{$invoice->invoice_number}.pdf");
-    }
-
-    private function validated(Request $request): array
-    {
-        return $request->validate([
-            'client_id' => ['required', 'integer', 'exists:clients,id'],
-            'issue_date' => ['required', 'date'],
-            'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
-            'discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'tax_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'notes' => ['nullable', 'string'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.description' => ['required', 'string', 'max:255'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
-            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
-        ]);
     }
 }

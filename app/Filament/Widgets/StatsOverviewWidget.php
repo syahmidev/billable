@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Widgets;
 
-use App\Models\Plan;
+use App\Enums\PlanSlug;
 use App\Models\Tenant;
 use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
@@ -24,7 +24,7 @@ class StatsOverviewWidget extends BaseWidget
         $mrr = (int) DB::connection('pgsql')
             ->table('users')
             ->whereNotNull('plan')
-            ->where('plan', '!=', 'free')
+            ->where('plan', '!=', PlanSlug::Free->value)
             ->join('plans', 'users.plan', '=', 'plans.slug')
             ->sum('plans.price');
 
@@ -41,7 +41,7 @@ class StatsOverviewWidget extends BaseWidget
                 ->color('success')
                 ->icon('heroicon-o-credit-card'),
 
-            Stat::make('MRR', '$' . number_format($mrr))
+            Stat::make('MRR', '$'.number_format($mrr))
                 ->description('Monthly recurring revenue')
                 ->color('warning')
                 ->icon('heroicon-o-currency-dollar'),

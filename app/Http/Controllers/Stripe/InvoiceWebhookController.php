@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Stripe;
 
 use App\Actions\Invoice\MarkInvoicePaid;
+use App\Enums\InvoiceStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Tenant;
@@ -54,7 +55,7 @@ class InvoiceWebhookController extends Controller
         try {
             $invoice = Invoice::find($invoiceId);
 
-            if ($invoice && $invoice->status !== Invoice::STATUS_PAID) {
+            if ($invoice && $invoice->status !== InvoiceStatus::Paid->value) {
                 $action->handle($invoice->load('client', 'items'), $tenant->name ?? 'billable');
             }
         } finally {

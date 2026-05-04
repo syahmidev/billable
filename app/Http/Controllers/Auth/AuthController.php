@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Actions\Auth\LoginUser;
 use App\Actions\Auth\RegisterUser;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,15 +21,11 @@ class AuthController extends Controller
         return Inertia::render('Auth/Register');
     }
 
-    public function register(Request $request, RegisterUser $action): RedirectResponse
+    public function register(RegisterRequest $request, RegisterUser $action): RedirectResponse
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'min:8', 'confirmed'],
-        ]);
+        $data = $request->validated();
 
-        $action->handle($request->name, $request->email, $request->password);
+        $action->handle($data['name'], $data['email'], $data['password']);
 
         return redirect()->route('onboarding');
     }
@@ -37,14 +35,11 @@ class AuthController extends Controller
         return Inertia::render('Auth/Login');
     }
 
-    public function login(Request $request, LoginUser $action): RedirectResponse|SymfonyResponse
+    public function login(LoginRequest $request, LoginUser $action): RedirectResponse|SymfonyResponse
     {
-        $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
+        $data = $request->validated();
 
-        if (! $action->handle($request, $request->email, $request->password, $request->boolean('remember'))) {
+        if (! $action->handle($request, $data['email'], $data['password'], $request->boolean('remember'))) {
             return back()->withErrors(['email' => 'These credentials do not match our records.']);
         }
 

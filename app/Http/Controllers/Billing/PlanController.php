@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Billing;
 
 use App\Actions\Billing\ActivateFreePlan;
 use App\Actions\Billing\StartSubscription;
+use App\Enums\PlanSlug;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +19,7 @@ class PlanController extends Controller
     {
         $user = $request->user();
 
-        if ($user->plan === 'free' || $user->subscribed('default')) {
+        if ($user->plan === PlanSlug::Free->value || $user->subscribed('default')) {
             if ($url = $user->tenantUrl()) {
                 return redirect()->away($url);
             }
@@ -43,6 +44,7 @@ class PlanController extends Controller
 
         if ($plan->isFree()) {
             $freePlan->handle($user);
+
             return Inertia::location($user->tenantUrl());
         }
 

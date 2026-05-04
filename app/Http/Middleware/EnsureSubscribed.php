@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\PlanSlug;
+use App\Support\AppUrl;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,13 +14,10 @@ class EnsureSubscribed
     {
         $user = auth()->user();
 
-        if ($user->plan === 'free' || $user->subscribed('default')) {
+        if ($user->plan === PlanSlug::Free->value || $user->subscribed('default')) {
             return $next($request);
         }
 
-        $scheme = parse_url(config('app.url'), PHP_URL_SCHEME);
-        $host = parse_url(config('app.url'), PHP_URL_HOST);
-
-        return redirect()->away("{$scheme}://{$host}/plans");
+        return redirect()->away(AppUrl::central('/plans'));
     }
 }

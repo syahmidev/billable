@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\PlanSlug;
 use App\Models\Plan;
 use Illuminate\Database\Seeder;
 
@@ -12,7 +13,7 @@ class PlanSeeder extends Seeder
         $plans = [
             [
                 'name' => 'Free',
-                'slug' => 'free',
+                'slug' => PlanSlug::Free->value,
                 'stripe_price_id' => 'price_1TTGRPF0HPxuwMFJEqNSURFQ',
                 'price' => 0,
                 'features' => [
@@ -24,7 +25,7 @@ class PlanSeeder extends Seeder
             ],
             [
                 'name' => 'Pro',
-                'slug' => 'pro',
+                'slug' => PlanSlug::Pro->value,
                 'stripe_price_id' => 'price_1TTGRnF0HPxuwMFJ0vR15Jip',
                 'price' => 29,
                 'features' => [
@@ -38,7 +39,7 @@ class PlanSeeder extends Seeder
             ],
             [
                 'name' => 'Business',
-                'slug' => 'business',
+                'slug' => PlanSlug::Business->value,
                 'stripe_price_id' => 'price_1TTGS6F0HPxuwMFJNYAoAwYP',
                 'price' => 79,
                 'features' => [

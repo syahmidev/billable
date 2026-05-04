@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Actions\Client\CreateClient;
 use App\Actions\Client\UpdateClient;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tenant\SaveClientRequest;
 use App\Models\Client;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,18 +38,9 @@ class ClientController extends Controller
         return Inertia::render('Tenant/Clients/Create');
     }
 
-    public function store(Request $request, CreateClient $action): RedirectResponse
+    public function store(SaveClientRequest $request, CreateClient $action): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'company' => ['nullable', 'string', 'max:255'],
-            'address' => ['nullable', 'string'],
-            'notes' => ['nullable', 'string'],
-        ]);
-
-        $action->handle($data);
+        $action->handle($request->validated());
 
         return redirect()->route('tenant.clients.index')->with('success', 'Client created.');
     }
@@ -75,18 +67,9 @@ class ClientController extends Controller
         ]);
     }
 
-    public function update(Request $request, Client $client, UpdateClient $action): RedirectResponse
+    public function update(SaveClientRequest $request, Client $client, UpdateClient $action): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'company' => ['nullable', 'string', 'max:255'],
-            'address' => ['nullable', 'string'],
-            'notes' => ['nullable', 'string'],
-        ]);
-
-        $action->handle($client, $data);
+        $action->handle($client, $request->validated());
 
         return redirect()->route('tenant.clients.show', $client)->with('success', 'Client updated.');
     }

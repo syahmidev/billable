@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\InvoiceStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,11 +16,15 @@ class Invoice extends Model
 {
     use SoftDeletes;
 
-    const STATUS_DRAFT = 'draft';
-    const STATUS_SENT = 'sent';
-    const STATUS_PAID = 'paid';
-    const STATUS_OVERDUE = 'overdue';
-    const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_DRAFT = InvoiceStatus::Draft->value;
+
+    public const STATUS_SENT = InvoiceStatus::Sent->value;
+
+    public const STATUS_PAID = InvoiceStatus::Paid->value;
+
+    public const STATUS_OVERDUE = InvoiceStatus::Overdue->value;
+
+    public const STATUS_CANCELLED = InvoiceStatus::Cancelled->value;
 
     protected function casts(): array
     {
@@ -38,7 +43,7 @@ class Invoice extends Model
     {
         $next = static::withTrashed()->count() + 1;
 
-        return 'INV-' . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        return 'INV-'.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
     }
 
     public function discountAmount(): float

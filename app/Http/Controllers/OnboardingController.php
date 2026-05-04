@@ -3,12 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Tenant\CreateWorkspace;
+use App\Http\Requests\StoreOnboardingRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class OnboardingController extends Controller
 {
@@ -21,18 +20,11 @@ class OnboardingController extends Controller
         return Inertia::render('Onboarding/Index');
     }
 
-    public function store(Request $request, CreateWorkspace $action): RedirectResponse|SymfonyResponse
+    public function store(StoreOnboardingRequest $request, CreateWorkspace $action): RedirectResponse
     {
-        $request->validate([
-            'workspace_name' => ['required', 'string', 'max:100'],
-            'subdomain' => ['required', 'string', 'max:50', 'regex:/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/'],
-        ]);
+        $data = $request->validated();
 
-        if ($action->isSubdomainTaken($request->subdomain)) {
-            return back()->withErrors(['subdomain' => 'This subdomain is not available.']);
-        }
-
-        $action->handle($request->user(), $request->workspace_name, $request->subdomain);
+        $action->handle($request->user(), $data['workspace_name'], $data['subdomain']);
 
         return redirect()->route('plans');
     }

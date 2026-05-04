@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PlanSlug;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -21,11 +22,11 @@ class Plan extends Model
 
     public function isFree(): bool
     {
-        return $this->price === 0;
+        return $this->slug === PlanSlug::Free->value || $this->price === 0;
     }
 
     public function formattedPrice(): string
     {
-        return $this->price === 0 ? 'Free' : '$' . $this->price . '/mo';
+        return $this->price === 0 ? 'Free' : '$'.$this->price.'/mo';
     }
 }
