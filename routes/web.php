@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Billing\PlanController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Stripe\InvoiceWebhookController;
@@ -30,4 +31,4 @@ Route::post('/stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookControl
 Route::post('/stripe/invoice-webhook', [InvoiceWebhookController::class, 'handle'])
     ->name('stripe.invoice.webhook');
 
-Route::get('/', fn () => redirect()->route('login'));
+Route::get('/', LandingController::class)->name('landing');
