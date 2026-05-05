@@ -26,4 +26,15 @@ class RoutingBoundaryTest extends TestCase
         $this->assertSame('billing', $route->uri());
         $this->assertNull(Route::getRoutes()->getByName('billing.index'));
     }
+
+    public function test_public_invoice_payment_routes_are_throttled(): void
+    {
+        $paymentPageRoute = Route::getRoutes()->getByName('tenant.invoice.pay');
+        $paymentIntentRoute = Route::getRoutes()->getByName('tenant.invoice.intent');
+
+        $this->assertNotNull($paymentPageRoute);
+        $this->assertNotNull($paymentIntentRoute);
+        $this->assertContains('throttle:60,1', $paymentPageRoute->gatherMiddleware());
+        $this->assertContains('throttle:10,1', $paymentIntentRoute->gatherMiddleware());
+    }
 }

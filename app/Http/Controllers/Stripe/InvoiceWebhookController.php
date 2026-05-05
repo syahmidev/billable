@@ -6,14 +6,18 @@ namespace App\Http\Controllers\Stripe;
 
 use App\Actions\Invoice\MarkInvoicePaid;
 use App\Enums\InvoiceStatus;
+use App\Enums\StripeEventStatus;
+use App\Enums\StripeEventType;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Models\StripeEvent;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Stancl\Tenancy\Facades\Tenancy;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Webhook;
+use Throwable;
 
 class InvoiceWebhookController extends Controller
 {
@@ -32,7 +36,24 @@ class InvoiceWebhookController extends Controller
             return response('Invalid signature.', 400);
         }
 
-        if ($event->type !== 'payment_intent.succeeded') {
+        $eventLog = StripeEvent::createOrFirst(
+            ['stripe_event_id' => $event->id],
+            [
+                'type' => $event->type,
+                'payload' => json_decode($payload, true) ?: [],
+                'status' => StripeEventStatus::Received,
+            ],
+        );
+
+        if ($eventLog->status?->isHandled() === true) {
+            return response('Event already handled.', 200);
+        }
+
+        $eventLog->recordAttempt();
+
+        if ($event->type !== StripeEventType::PaymentIntentSucceeded->value) {
+            $eventLog->markIgnored('Unsupported event type.');
+
             return response('Event ignored.', 200);
         }
 
@@ -41,13 +62,23 @@ class InvoiceWebhookController extends Controller
         $tenantId = $paymentIntent->metadata->tenant_id ?? null;
         $invoiceId = $paymentIntent->metadata->invoice_id ?? null;
 
+        $eventLog->forceFill([
+            'tenant_id' => $tenantId,
+            'invoice_id' => $invoiceId,
+            'payment_intent_id' => $paymentIntentId,
+        ])->save();
+
         if (! $tenantId || ! $invoiceId) {
+            $eventLog->markIgnored('Missing metadata.');
+
             return response('Missing metadata.', 200);
         }
 
         $tenant = Tenant::find($tenantId);
 
         if (! $tenant) {
+            $eventLog->markIgnored('Tenant not found.');
+
             return response('Tenant not found.', 200);
         }
 
@@ -57,6 +88,8 @@ class InvoiceWebhookController extends Controller
             $invoice = Invoice::find($invoiceId);
 
             if (! $invoice) {
+                $eventLog->markIgnored('Invoice not found.');
+
                 return response('Invoice not found.', 200);
             }
 
@@ -64,10 +97,14 @@ class InvoiceWebhookController extends Controller
                 $invoice->stripe_payment_intent_id
                 && $invoice->stripe_payment_intent_id !== $paymentIntentId
             ) {
+                $eventLog->markFailed('Payment intent mismatch.');
+
                 return response('Payment intent mismatch.', 200);
             }
 
             if ($invoice->status === InvoiceStatus::Paid->value) {
+                $eventLog->markProcessed();
+
                 return response('Invoice already paid.', 200);
             }
 
@@ -76,6 +113,12 @@ class InvoiceWebhookController extends Controller
                 workspaceName: $tenant->name ?? 'billable',
                 paymentIntentId: $paymentIntentId,
             );
+
+            $eventLog->markProcessed();
+        } catch (Throwable $exception) {
+            $eventLog->markFailed($exception->getMessage());
+
+            throw $exception;
         } finally {
             Tenancy::end();
         }
