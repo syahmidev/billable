@@ -65,8 +65,8 @@ class DashboardController extends Controller
                 'client_count' => $clientCount,
                 'draft_count' => $draftCount,
             ],
-            'chart_data' => $chartData,
-            'recent_invoices' => $recentInvoices,
+            'chartData' => $chartData,
+            'recentInvoices' => $recentInvoices,
         ]);
     }
 }
