@@ -13,10 +13,17 @@ use Illuminate\Mail\Mailables\Envelope;
 
 class InvoiceMail extends Mailable
 {
+    public string $paymentUrl;
+
     public function __construct(
         public Invoice $invoice,
         public string $workspaceName,
-    ) {}
+    ) {
+        $domain = tenant()->domains()->first()?->domain;
+        $this->paymentUrl = $domain
+            ? 'https://'.$domain.'/pay/'.$invoice->payment_token
+            : '';
+    }
 
     public function envelope(): Envelope
     {

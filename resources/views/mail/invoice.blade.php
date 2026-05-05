@@ -14,6 +14,7 @@
         .meta-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
         .meta-label { color: #9ca3af; }
         .meta-value { color: #111827; font-weight: 500; }
+        .btn { display: block; width: fit-content; margin: 24px auto; padding: 14px 32px; background: #7c3aed; color: #fff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; }
         .footer { margin-top: 24px; font-size: 12px; color: #9ca3af; text-align: center; }
     </style>
 </head>
@@ -41,6 +42,10 @@
                     <span class="meta-value">{{ $invoice->due_date->format('M d, Y') }}</span>
                 </div>
             </div>
+
+            @if($paymentUrl)
+            <a href="{{ $paymentUrl }}" class="btn">Pay Now</a>
+            @endif
 
             <p>The invoice PDF is attached to this email for your records.</p>
 
