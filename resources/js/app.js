@@ -4,7 +4,8 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'
 
 createInertiaApp({
     title: (title) => `${title} — Billable`,
-    resolve: (name) => resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob('./Pages/**/*.vue')),
+    resolve: (name) =>
+        resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob('./Pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
         createApp({ render: () => h(App, props) })
             .use(plugin)

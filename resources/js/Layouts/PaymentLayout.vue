@@ -1,9 +1,9 @@
 <script setup>
-import { Head } from '@inertiajs/vue3'
+    import { Head } from '@inertiajs/vue3'
 
-defineProps({
-    title: { type: String, default: 'Secure Invoice Payment' },
-})
+    defineProps({
+        title: { type: String, default: 'Secure Invoice Payment' },
+    })
 </script>
 
 <template>

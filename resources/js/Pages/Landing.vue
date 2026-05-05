@@ -534,7 +534,9 @@
                     </span>
                     <span class="text-sm font-medium text-gray-400">billable</span>
                 </Link>
-                <p class="text-xs text-gray-600">Built with <span class="text-violet-400">♥</span> by Syahmi & Miyu</p>
+                <p class="text-xs text-gray-600">
+                    Built with <span class="text-violet-400">♥</span> by Syahmi & Miyu
+                </p>
             </div>
         </footer>
     </div>
