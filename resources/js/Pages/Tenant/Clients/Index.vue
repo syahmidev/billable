@@ -1,7 +1,7 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { router } from '@inertiajs/vue3'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
     clients: Object,
@@ -9,6 +9,7 @@ const props = defineProps({
 })
 
 const search = ref(props.filters?.search ?? '')
+const hasSearch = computed(() => search.value.trim().length > 0)
 
 let searchTimeout = null
 watch(search, (val) => {
@@ -93,10 +94,22 @@ function archive(id) {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                     </div>
-                    <h3 class="text-sm font-medium text-white mb-1">No clients yet</h3>
-                    <p class="text-xs text-gray-500 mb-4">Add your first client to get started</p>
-                    <a href="/clients/create" class="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors">
-                        New Client
+                    <h3 class="text-sm font-medium text-white mb-1">
+                        {{ hasSearch ? 'No matching clients' : 'No clients yet' }}
+                    </h3>
+                    <p class="text-xs text-gray-500 mb-4">
+                        {{ hasSearch ? 'Try a different name, email, or company.' : 'Add your first client to get started.' }}
+                    </p>
+                    <button
+                        v-if="hasSearch"
+                        type="button"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs font-medium rounded-lg transition-colors"
+                        @click="search = ''"
+                    >
+                        Clear search
+                    </button>
+                    <a v-else href="/clients/create" class="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors">
+                        New client
                     </a>
                 </div>
             </div>

@@ -1,7 +1,7 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { router } from '@inertiajs/vue3'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
     invoices: Object,
@@ -11,6 +11,7 @@ const props = defineProps({
 
 const statusFilter = ref(props.filters?.status ?? '')
 const clientFilter = ref(props.filters?.client_id ?? '')
+const hasFilters = computed(() => Boolean(statusFilter.value || clientFilter.value))
 
 watch([statusFilter, clientFilter], () => {
     router.get('/invoices', {
@@ -112,10 +113,22 @@ const statusColors = {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                     </div>
-                    <h3 class="text-sm font-medium text-white mb-1">No invoices yet</h3>
-                    <p class="text-xs text-gray-500 mb-4">Create your first invoice to get paid</p>
-                    <a href="/invoices/create" class="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors">
-                        New Invoice
+                    <h3 class="text-sm font-medium text-white mb-1">
+                        {{ hasFilters ? 'No matching invoices' : 'No invoices yet' }}
+                    </h3>
+                    <p class="text-xs text-gray-500 mb-4">
+                        {{ hasFilters ? 'Try changing the status or client filter.' : 'Create your first invoice to get paid.' }}
+                    </p>
+                    <button
+                        v-if="hasFilters"
+                        type="button"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs font-medium rounded-lg transition-colors"
+                        @click="statusFilter = ''; clientFilter = ''"
+                    >
+                        Clear filters
+                    </button>
+                    <a v-else href="/invoices/create" class="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors">
+                        New invoice
                     </a>
                 </div>
             </div>

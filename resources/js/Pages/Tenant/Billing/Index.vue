@@ -90,7 +90,7 @@ function subscribe(plan) {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <div v-if="plans.length" class="grid grid-cols-1 gap-4 lg:grid-cols-3">
                     <div
                         v-for="plan in plans"
                         :key="plan.id"
@@ -141,6 +141,13 @@ function subscribe(plan) {
                             <span v-else>Upgrade to {{ plan.name }}</span>
                         </button>
                     </div>
+                </div>
+
+                <div v-else class="rounded-xl border border-white/10 bg-gray-950/40 p-10 text-center">
+                    <p class="text-sm font-medium text-white">No plans are available</p>
+                    <p class="mt-2 text-sm text-gray-500">
+                        Ask a platform admin to create and activate billing plans.
+                    </p>
                 </div>
             </div>
         </div>

@@ -11,9 +11,16 @@ use Illuminate\Support\Facades\Mail;
 
 class MarkInvoicePaid
 {
-    public function handle(Invoice $invoice, string $workspaceName): void
+    public function handle(Invoice $invoice, string $workspaceName, ?string $paymentIntentId = null): void
     {
-        $invoice->update(['status' => InvoiceStatus::Paid->value]);
+        if ($invoice->status === InvoiceStatus::Paid->value) {
+            return;
+        }
+
+        $invoice->forceFill([
+            'status' => InvoiceStatus::Paid->value,
+            'stripe_payment_intent_id' => $invoice->stripe_payment_intent_id ?: $paymentIntentId,
+        ])->save();
 
         if ($invoice->client->email) {
             Mail::to($invoice->client->email)

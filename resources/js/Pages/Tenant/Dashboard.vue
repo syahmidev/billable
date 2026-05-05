@@ -3,7 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue'
 import { usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 
-defineProps({
+const props = defineProps({
     workspace: Object,
     stats: { type: Object, default: () => ({}) },
     chartData: { type: Array, default: () => [] },
@@ -12,6 +12,7 @@ defineProps({
 
 const page = usePage()
 const user = page.props.auth.user
+const isEmptyWorkspace = computed(() => Number(props.stats.client_count ?? 0) === 0 && props.recentInvoices.length === 0)
 
 const statusColors = {
     draft: 'bg-gray-800 text-gray-400',
@@ -49,6 +50,25 @@ function fmtFull(n) {
                     <a href="/invoices/create" class="px-3.5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors">
                         New Invoice
                     </a>
+                </div>
+            </div>
+
+            <div v-if="isEmptyWorkspace" class="mb-6 rounded-xl border border-violet-500/20 bg-violet-500/10 p-5">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-white">Set up your billing workspace</p>
+                        <p class="mt-1 text-sm text-gray-400">
+                            Add a client first, then create an invoice when you are ready to collect payment.
+                        </p>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <a href="/clients/create" class="rounded-lg border border-white/10 bg-white/5 px-3.5 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-white/10">
+                            Add client
+                        </a>
+                        <a href="/invoices/create" class="rounded-lg bg-violet-600 px-3.5 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-violet-500">
+                            Create invoice
+                        </a>
+                    </div>
                 </div>
             </div>
 

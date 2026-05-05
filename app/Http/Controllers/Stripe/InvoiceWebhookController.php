@@ -37,6 +37,7 @@ class InvoiceWebhookController extends Controller
         }
 
         $paymentIntent = $event->data->object;
+        $paymentIntentId = (string) $paymentIntent->id;
         $tenantId = $paymentIntent->metadata->tenant_id ?? null;
         $invoiceId = $paymentIntent->metadata->invoice_id ?? null;
 
@@ -55,9 +56,26 @@ class InvoiceWebhookController extends Controller
         try {
             $invoice = Invoice::find($invoiceId);
 
-            if ($invoice && $invoice->status !== InvoiceStatus::Paid->value) {
-                $action->handle($invoice->load('client', 'items'), $tenant->name ?? 'billable');
+            if (! $invoice) {
+                return response('Invoice not found.', 200);
             }
+
+            if (
+                $invoice->stripe_payment_intent_id
+                && $invoice->stripe_payment_intent_id !== $paymentIntentId
+            ) {
+                return response('Payment intent mismatch.', 200);
+            }
+
+            if ($invoice->status === InvoiceStatus::Paid->value) {
+                return response('Invoice already paid.', 200);
+            }
+
+            $action->handle(
+                invoice: $invoice->load('client', 'items'),
+                workspaceName: $tenant->name ?? 'billable',
+                paymentIntentId: $paymentIntentId,
+            );
         } finally {
             Tenancy::end();
         }
