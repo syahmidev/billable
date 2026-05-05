@@ -21,6 +21,11 @@ use Inertia\Response;
 
 class InvoiceController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeResource(Invoice::class, 'invoice');
+    }
+
     public function index(Request $request): Response
     {
         $invoices = Invoice::with('client')
@@ -99,6 +104,7 @@ class InvoiceController extends Controller
 
     public function send(Invoice $invoice, SendInvoice $action): RedirectResponse
     {
+        $this->authorize('send', $invoice);
         $action->handle($invoice, tenant('name'));
 
         $message = $invoice->client->email
@@ -110,6 +116,7 @@ class InvoiceController extends Controller
 
     public function pdf(Invoice $invoice): HttpResponse
     {
+        $this->authorize('pdf', $invoice);
         $invoice->load('client', 'items');
 
         $pdf = Pdf::loadView('pdf.invoice', [

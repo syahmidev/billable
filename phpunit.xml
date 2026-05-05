@@ -24,8 +24,12 @@
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="central"/>
-        <env name="CENTRAL_DB_CONNECTION" value="sqlite"/>
-        <env name="CENTRAL_DB_DATABASE" value=":memory:"/>
+        <env name="CENTRAL_DB_CONNECTION" value="pgsql"/>
+        <env name="CENTRAL_DB_HOST" value="127.0.0.1"/>
+        <env name="CENTRAL_DB_PORT" value="5432"/>
+        <env name="CENTRAL_DB_DATABASE" value="billable_test"/>
+        <env name="CENTRAL_DB_USERNAME" value="postgres"/>
+        <env name="CENTRAL_DB_PASSWORD" value=""/>
         <env name="TENANCY_CENTRAL_CONNECTION" value="central"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
