@@ -22,7 +22,7 @@ class User extends Authenticatable implements FilamentUser
     /** @use HasFactory<UserFactory> */
     use Billable, HasFactory, HasTenantAccess, Notifiable;
 
-    protected $connection = 'pgsql';
+    protected $connection = 'central';
 
     public function canAccessPanel(Panel $panel): bool
     {

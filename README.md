@@ -86,7 +86,7 @@ Important: `https://billable.test/dashboard` should return 404 because `/dashboa
 - Composer
 - PostgreSQL
 - Bun or Node.js/npm
-- Laravel Valet is recommended for local subdomain tenancy
+- Laravel Herd for local `.test` domains
 - Stripe CLI for local webhook forwarding
 
 ### 1. Install Dependencies
@@ -115,14 +115,19 @@ Set the important values in `.env`:
 APP_NAME=Billable
 APP_URL=https://billable.test
 
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=billable
-DB_USERNAME=your_postgres_user
-DB_PASSWORD=your_postgres_password
+DB_CONNECTION=central
+
+CENTRAL_DB_CONNECTION=pgsql
+CENTRAL_DB_HOST=
+CENTRAL_DB_PORT=
+CENTRAL_DB_DATABASE=
+CENTRAL_DB_USERNAME=
+CENTRAL_DB_PASSWORD=
+
+TENANCY_CENTRAL_CONNECTION=central
 
 SESSION_DRIVER=database
+SESSION_DOMAIN=.billable.test
 CACHE_STORE=database
 QUEUE_CONNECTION=database
 
@@ -132,18 +137,18 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 CASHIER_CURRENCY=usd
 ```
 
-Do not leave the app on SQLite for normal local development. Several central models use the PostgreSQL connection explicitly, and tenant databases are also PostgreSQL in the current setup.
+Do not leave the app on SQLite for normal local development. The app uses a named `central` connection for the central database, and that connection should use PostgreSQL locally. PHPUnit overrides the same connection name to SQLite memory for tests.
 
 ### 3. Configure Local Domains
 
-With Valet:
+With Laravel Herd:
 
-```bash
-valet link billable
-valet secure billable
-```
+1. Open Herd.
+2. Make sure `/Users/syahmirazak/Sites` is parked.
+3. Make sure the `billable` site is available as `billable.test`.
+4. Secure the site in Herd if you want to use `https://billable.test`.
 
-If you are not using Valet, add the central and tenant domains you need to `/etc/hosts`:
+If tenant subdomains do not resolve automatically on your machine, add the central and tenant domains you need to `/etc/hosts`:
 
 ```txt
 127.0.0.1 billable.test
@@ -181,7 +186,7 @@ For active frontend work:
 bun run dev
 ```
 
-Valet should serve the Laravel app while Vite serves frontend assets in development.
+Herd should serve the Laravel app while Vite serves frontend assets in development.
 
 ### 6. Forward Stripe Webhooks
 
@@ -222,6 +227,9 @@ bun run dev
 # Run the focused invoice totals unit tests
 php artisan test --filter=InvoiceTotalsTest
 
+# Run the full test suite
+php artisan test
+
 # List central billing routes
 php artisan route:list --path=plans --except-vendor
 
@@ -229,7 +237,7 @@ php artisan route:list --path=plans --except-vendor
 php artisan route:list --path=billing --except-vendor
 ```
 
-Full test-suite note: `php artisan test` currently depends on PostgreSQL being available because the landing page loads plans from the `pgsql` connection. If PostgreSQL is not reachable in the test environment, the default feature test for `/` can fail with a database connection error.
+Test-suite note: PHPUnit uses the named `central` connection with an in-memory SQLite driver. Local development should still use the same `central` connection name with PostgreSQL.
 
 ---
 
@@ -322,7 +330,7 @@ Tenant pages should load assets from `/build/assets/...`.
 
 ### Plans or landing page fail during tests
 
-The `Plan` model uses the `pgsql` connection. Make sure PostgreSQL is reachable for feature tests that hit the landing page or billing pages.
+Make sure `phpunit.xml` keeps `DB_CONNECTION=central`, `CENTRAL_DB_CONNECTION=sqlite`, and `CENTRAL_DB_DATABASE=:memory:`. This lets central models and migrations use the same in-memory database during tests.
 
 ---
 

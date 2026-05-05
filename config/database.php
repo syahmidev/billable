@@ -46,6 +46,22 @@ return [
             'transaction_mode' => 'DEFERRED',
         ],
 
+        'central' => [
+            'driver' => env('CENTRAL_DB_CONNECTION', 'pgsql'),
+            'url' => env('CENTRAL_DB_URL'),
+            'host' => env('CENTRAL_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('CENTRAL_DB_PORT', env('DB_PORT', '5432')),
+            'database' => env('CENTRAL_DB_DATABASE', env('DB_DATABASE', 'billable')),
+            'username' => env('CENTRAL_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('CENTRAL_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => env('CENTRAL_DB_CHARSET', env('DB_CHARSET', 'utf8')),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+            'search_path' => 'public',
+            'sslmode' => env('CENTRAL_DB_SSLMODE', env('DB_SSLMODE', 'prefer')),
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),

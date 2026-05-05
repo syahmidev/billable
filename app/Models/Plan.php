@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable(['name', 'slug', 'stripe_price_id', 'price', 'features', 'is_active'])]
 class Plan extends Model
 {
-    protected $connection = 'pgsql';
+    protected $connection = 'central';
 
     protected function casts(): array
     {
