@@ -24,7 +24,7 @@ The central domain is for the landing page, authentication, onboarding, subscrip
 | PDF generation | barryvdh/laravel-dompdf |
 | Database | PostgreSQL central database plus PostgreSQL tenant databases |
 | Code style | Laravel Pint with project rules in `pint.json` |
-| Frontend packages | Bun lockfile is present; npm scripts also work |
+| Frontend packages | Bun |
 
 ---
 
@@ -85,7 +85,7 @@ Important: `https://billable.test/dashboard` should return 404 because `/dashboa
 - PHP 8.3+
 - Composer
 - PostgreSQL
-- Bun or Node.js/npm
+- Bun
 - Laravel Herd for local `.test` domains
 - Stripe CLI for local webhook forwarding
 
@@ -94,12 +94,6 @@ Important: `https://billable.test/dashboard` should return 404 because `/dashboa
 ```bash
 composer install
 bun install
-```
-
-If you prefer npm:
-
-```bash
-npm install
 ```
 
 ### 2. Create Environment File
@@ -174,12 +168,6 @@ When a new workspace is created through onboarding, Stancl Tenancy creates the t
 bun run build
 ```
 
-Or with npm:
-
-```bash
-npm run build
-```
-
 For active frontend work:
 
 ```bash
@@ -212,6 +200,9 @@ Copy the generated webhook secret into `STRIPE_WEBHOOK_SECRET`.
 ## Common Development Commands
 
 ```bash
+# Run the Herd-friendly dev stack: queue, logs, and Vite
+composer run dev
+
 # Format PHP files
 ./vendor/bin/pint
 
@@ -230,6 +221,11 @@ php artisan test --filter=InvoiceTotalsTest
 # Run the full test suite
 php artisan test
 
+# Run the same core checks as CI
+./vendor/bin/pint --test
+php artisan test
+bun run build
+
 # List central billing routes
 php artisan route:list --path=plans --except-vendor
 
@@ -238,6 +234,8 @@ php artisan route:list --path=billing --except-vendor
 ```
 
 Test-suite note: PHPUnit uses the named `central` connection with an in-memory SQLite driver. Local development should still use the same `central` connection name with PostgreSQL.
+
+GitHub Actions runs the CI workflow in `.github/workflows/ci.yml` using Composer, Bun, Pint, PHPUnit, and the Vite production build.
 
 ---
 
