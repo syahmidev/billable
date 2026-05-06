@@ -39,6 +39,12 @@ class InvoicePolicy
         return $user->belongsToTenant(tenant('id'));
     }
 
+    public function remind(User $user, Invoice $invoice): bool
+    {
+        return $user->belongsToTenant(tenant('id'))
+            && in_array($invoice->status, Invoice::remindableStatuses(), true);
+    }
+
     public function pdf(User $user, Invoice $invoice): bool
     {
         return $user->belongsToTenant(tenant('id'));

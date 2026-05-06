@@ -32,6 +32,11 @@ function send() {
     router.post(`/invoices/${props.invoice.id}/send`)
 }
 
+function remind() {
+    if (!confirm(`Send a payment reminder for ${props.invoice.invoice_number}?`)) return
+    router.post(`/invoices/${props.invoice.id}/remind`)
+}
+
 function deleteInvoice() {
     if (!confirm(`Delete ${props.invoice.invoice_number}? This cannot be undone.`)) return
     router.delete(`/invoices/${props.invoice.id}`)
@@ -46,6 +51,12 @@ function fmt(n) { return Number(n).toFixed(2) }
             <!-- Flash -->
             <div v-if="page.props.flash?.success" class="mb-6 px-4 py-3 bg-green-500/10 border border-green-500/20 rounded-lg text-sm text-green-400">
                 {{ page.props.flash.success }}
+            </div>
+            <div v-if="page.props.flash?.error" class="mb-6 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+                {{ page.props.flash.error }}
+            </div>
+            <div v-if="page.props.errors?.invoice" class="mb-6 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+                {{ page.props.errors.invoice }}
             </div>
 
             <!-- Header -->
@@ -97,6 +108,16 @@ function fmt(n) { return Number(n).toFixed(2) }
                         {{ invoice.status === 'sent' ? 'Resend' : 'Send' }}
                     </button>
                     <button
+                        v-if="invoice.can_send_reminder"
+                        @click="remind"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-300 text-sm font-medium rounded-lg transition-colors"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5" />
+                        </svg>
+                        Remind
+                    </button>
+                    <button
                         v-if="invoice.status === 'draft'"
                         @click="deleteInvoice"
                         class="inline-flex items-center px-3.5 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 text-sm font-medium rounded-lg transition-colors"
@@ -137,6 +158,13 @@ function fmt(n) { return Number(n).toFixed(2) }
                         <p class="text-xs text-gray-600 uppercase tracking-wider mb-1">Due Date</p>
                         <p class="text-sm font-medium text-white">{{ invoice.due_date }}</p>
                     </div>
+                </div>
+
+                <div v-if="invoice.reminders_sent > 0" class="px-6 py-3 bg-amber-500/5 border-b border-amber-500/10">
+                    <p class="text-xs text-amber-300">
+                        {{ invoice.reminders_sent }} reminder{{ invoice.reminders_sent !== 1 ? 's' : '' }} sent
+                        <span v-if="invoice.last_reminded_at">· last {{ invoice.last_reminded_at }}</span>
+                    </p>
                 </div>
 
                 <!-- Line items -->

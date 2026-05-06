@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Client\ArchiveClient;
 use App\Actions\Client\CreateClient;
 use App\Actions\Client\UpdateClient;
 use App\Http\Controllers\Controller;
@@ -45,7 +46,7 @@ class ClientController extends Controller
 
     public function store(SaveClientRequest $request, CreateClient $action): RedirectResponse
     {
-        $action->handle($request->validated());
+        $action->handle($request->validated(), $request->user());
 
         return redirect()->route('tenant.clients.index')->with('success', 'Client created.');
     }
@@ -74,14 +75,14 @@ class ClientController extends Controller
 
     public function update(SaveClientRequest $request, Client $client, UpdateClient $action): RedirectResponse
     {
-        $action->handle($client, $request->validated());
+        $action->handle($client, $request->validated(), $request->user());
 
         return redirect()->route('tenant.clients.show', $client)->with('success', 'Client updated.');
     }
 
-    public function destroy(Client $client): RedirectResponse
+    public function destroy(Request $request, Client $client, ArchiveClient $action): RedirectResponse
     {
-        $client->delete();
+        $action->handle($client, $request->user());
 
         return redirect()->route('tenant.clients.index')->with('success', 'Client archived.');
     }

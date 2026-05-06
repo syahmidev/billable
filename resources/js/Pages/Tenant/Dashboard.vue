@@ -8,6 +8,7 @@ const props = defineProps({
     stats: { type: Object, default: () => ({}) },
     chartData: { type: Array, default: () => [] },
     recentInvoices: { type: Array, default: () => [] },
+    recentActivity: { type: Array, default: () => [] },
 })
 
 const page = usePage()
@@ -236,6 +237,23 @@ function fmtFull(n) {
                                 <p class="text-xs font-medium text-red-400">{{ stats.overdue_count }} overdue invoice{{ stats.overdue_count !== 1 ? 's' : '' }}</p>
                                 <p class="text-xs text-gray-500 mt-0.5">{{ fmtFull(stats.overdue) }} past due</p>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-900 border border-white/10 rounded-xl p-5">
+                        <div class="mb-4 flex items-center justify-between">
+                            <h2 class="text-sm font-semibold text-white">Recent Activity</h2>
+                            <a href="/activity" class="text-xs text-violet-400 transition-colors hover:text-violet-300">View all</a>
+                        </div>
+                        <div v-if="recentActivity.length" class="space-y-3">
+                            <div v-for="activity in recentActivity" :key="activity.id" class="border-l border-white/10 pl-3">
+                                <p class="text-xs font-medium text-white">{{ activity.label }}</p>
+                                <p class="mt-0.5 text-xs text-gray-500">{{ activity.description }}</p>
+                                <p class="mt-1 text-xs text-gray-600">{{ activity.occurred_at }}</p>
+                            </div>
+                        </div>
+                        <div v-else class="rounded-lg border border-white/10 bg-gray-950/40 px-4 py-5 text-center">
+                            <p class="text-xs text-gray-500">No activity yet</p>
                         </div>
                     </div>
                 </div>

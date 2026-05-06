@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Client;
 use App\Models\Invoice;
 use Inertia\Inertia;
@@ -51,6 +52,18 @@ class DashboardController extends Controller
                 'client_name' => $inv->client?->name ?? '—',
             ]);
 
+        $recentActivity = ActivityLog::query()
+            ->latest('occurred_at')
+            ->limit(5)
+            ->get()
+            ->map(fn (ActivityLog $activity): array => [
+                'id' => $activity->id,
+                'label' => $activity->type->label(),
+                'description' => $activity->description,
+                'actor_name' => $activity->actor_name,
+                'occurred_at' => $activity->occurred_at?->diffForHumans(),
+            ]);
+
         return Inertia::render('Tenant/Dashboard', [
             'workspace' => [
                 'name' => tenant('name'),
@@ -67,6 +80,7 @@ class DashboardController extends Controller
             ],
             'chartData' => $chartData,
             'recentInvoices' => $recentInvoices,
+            'recentActivity' => $recentActivity,
         ]);
     }
 }

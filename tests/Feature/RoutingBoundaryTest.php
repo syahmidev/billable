@@ -27,6 +27,24 @@ class RoutingBoundaryTest extends TestCase
         $this->assertNull(Route::getRoutes()->getByName('billing.index'));
     }
 
+    public function test_tenant_billing_routes_remain_available_for_subscription_recovery(): void
+    {
+        $billingRoute = Route::getRoutes()->getByName('tenant.billing.index');
+        $dashboardRoute = Route::getRoutes()->getByName('tenant.dashboard');
+
+        $this->assertNotNull($billingRoute);
+        $this->assertNotNull($dashboardRoute);
+        $this->assertNotContains('subscribed', $billingRoute->gatherMiddleware());
+        $this->assertContains('subscribed', $dashboardRoute->gatherMiddleware());
+    }
+
+    public function test_team_activity_and_invoice_reminder_routes_are_registered(): void
+    {
+        $this->assertSame('team', Route::getRoutes()->getByName('tenant.team.index')?->uri());
+        $this->assertSame('activity', Route::getRoutes()->getByName('tenant.activity.index')?->uri());
+        $this->assertSame('invoices/{invoice}/remind', Route::getRoutes()->getByName('tenant.invoices.remind')?->uri());
+    }
+
     public function test_public_invoice_payment_routes_are_throttled(): void
     {
         $paymentPageRoute = Route::getRoutes()->getByName('tenant.invoice.pay');

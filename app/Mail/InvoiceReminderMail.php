@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Mail;
+
+use App\Models\Invoice;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Mail\Attachment;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+
+class InvoiceReminderMail extends Mailable
+{
+    public string $paymentUrl;
+
+    public function __construct(
+        public Invoice $invoice,
+        public string $workspaceName,
+    ) {
+        $domain = tenant()->domains()->first()?->domain;
+        $this->paymentUrl = $domain
+            ? 'https://'.$domain.'/pay/'.$invoice->payment_token
+            : '';
+    }
+
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: "Reminder: {$this->invoice->invoice_number} from {$this->workspaceName}",
+        );
+    }
+
+    public function content(): Content
+    {
+        return new Content(
+            view: 'mail.invoice-reminder',
+        );
+    }
+
+    public function attachments(): array
+    {
+        $pdf = Pdf::loadView('pdf.invoice', [
+            'invoice' => $this->invoice,
+            'workspaceName' => $this->workspaceName,
+        ]);
+
+        return [
+            Attachment::fromData(fn () => $pdf->output(), "{$this->invoice->invoice_number}.pdf")
+                ->withMime('application/pdf'),
+        ];
+    }
+}

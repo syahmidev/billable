@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace App\Actions\Invoice;
 
+use App\Actions\Activity\RecordActivity;
+use App\Enums\ActivityType;
 use App\Models\Invoice;
+use App\Models\User;
 use App\Support\InvoiceTotals;
 
 class UpdateInvoice
 {
-    public function handle(Invoice $invoice, array $data): Invoice
+    public function __construct(private readonly RecordActivity $activity) {}
+
+    public function handle(Invoice $invoice, array $data, ?User $actor = null): Invoice
     {
         $totals = InvoiceTotals::fromItems(
             $data['items'],
@@ -39,6 +44,16 @@ class UpdateInvoice
             ]);
         }
 
-        return $invoice->fresh('items');
+        $invoice = $invoice->fresh('items');
+
+        $this->activity->handle(
+            type: ActivityType::InvoiceUpdated,
+            description: "{$invoice->invoice_number} was updated.",
+            actor: $actor,
+            subject: $invoice,
+            metadata: ['total' => (float) $invoice->total],
+        );
+
+        return $invoice;
     }
 }

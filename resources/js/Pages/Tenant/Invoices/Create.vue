@@ -5,12 +5,13 @@ import { computed, ref } from 'vue'
 
 const props = defineProps({
     clients: Array,
+    defaultClientId: { type: [Number, String], default: null },
     defaultIssueDate: String,
     defaultDueDate: String,
 })
 
 const form = useForm({
-    client_id: '',
+    client_id: props.defaultClientId ?? '',
     issue_date: props.defaultIssueDate,
     due_date: props.defaultDueDate,
     discount_percent: 0,
@@ -35,6 +36,7 @@ const subtotal = computed(() =>
 const discountAmount = computed(() => subtotal.value * (Number(form.discount_percent) / 100))
 const taxAmount = computed(() => (subtotal.value - discountAmount.value) * (Number(form.tax_percent) / 100))
 const total = computed(() => subtotal.value - discountAmount.value + taxAmount.value)
+const hasClients = computed(() => props.clients.length > 0)
 
 function fmt(n) { return n.toFixed(2) }
 
@@ -64,7 +66,25 @@ function submit() {
                 </div>
             </div>
 
-            <form @submit.prevent="submit" class="space-y-5">
+            <div v-if="!hasClients" class="rounded-xl border border-violet-500/20 bg-violet-500/10 p-8 text-center">
+                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-violet-500/15">
+                    <svg class="h-6 w-6 text-violet-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-sm font-semibold text-white">Add a client first</h2>
+                <p class="mx-auto mt-2 max-w-md text-sm text-gray-400">
+                    Invoices need a bill-to profile before line items and payment links can be created.
+                </p>
+                <a
+                    href="/clients/create"
+                    class="mt-5 inline-flex items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-violet-500"
+                >
+                    New client
+                </a>
+            </div>
+
+            <form v-else @submit.prevent="submit" class="space-y-5">
                 <!-- Client + Dates -->
                 <div class="bg-gray-900 border border-white/10 rounded-xl p-6">
                     <h2 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">Invoice Details</h2>

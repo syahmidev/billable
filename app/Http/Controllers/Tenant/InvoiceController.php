@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Tenant;
 
 use App\Actions\Invoice\CreateInvoice;
+use App\Actions\Invoice\DeleteInvoice;
 use App\Actions\Invoice\SendInvoice;
+use App\Actions\Invoice\SendInvoiceReminder;
 use App\Actions\Invoice\UpdateInvoice;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\SaveInvoiceRequest;
@@ -42,10 +44,11 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         return Inertia::render('Tenant/Invoices/Create', [
             'clients' => Client::orderBy('name')->get(['id', 'name']),
+            'defaultClientId' => $request->integer('client_id') ?: null,
             'defaultIssueDate' => now()->toDateString(),
             'defaultDueDate' => now()->addDays(30)->toDateString(),
         ]);
@@ -53,7 +56,7 @@ class InvoiceController extends Controller
 
     public function store(SaveInvoiceRequest $request, CreateInvoice $action): RedirectResponse
     {
-        $invoice = $action->handle($request->validated());
+        $invoice = $action->handle($request->validated(), $request->user());
 
         return redirect()->route('tenant.invoices.show', $invoice)->with('success', 'Invoice created.');
     }
@@ -72,6 +75,9 @@ class InvoiceController extends Controller
                 ...$invoice->toArray(),
                 'discount_amount' => round($invoice->discountAmount(), 2),
                 'tax_amount' => round($invoice->taxAmount(), 2),
+                'can_send_reminder' => in_array($invoice->status, Invoice::remindableStatuses(), true)
+                    && (bool) $invoice->client?->email,
+                'last_reminded_at' => $invoice->last_reminded_at?->diffForHumans(),
             ],
             'workspaceName' => tenant('name'),
             'paymentUrl' => $paymentUrl,
@@ -90,28 +96,38 @@ class InvoiceController extends Controller
 
     public function update(SaveInvoiceRequest $request, Invoice $invoice, UpdateInvoice $action): RedirectResponse
     {
-        $action->handle($invoice, $request->validated());
+        $action->handle($invoice, $request->validated(), $request->user());
 
         return redirect()->route('tenant.invoices.show', $invoice)->with('success', 'Invoice updated.');
     }
 
-    public function destroy(Invoice $invoice): RedirectResponse
+    public function destroy(Request $request, Invoice $invoice, DeleteInvoice $action): RedirectResponse
     {
-        $invoice->delete();
+        $action->handle($invoice, $request->user());
 
         return redirect()->route('tenant.invoices.index')->with('success', 'Invoice deleted.');
     }
 
-    public function send(Invoice $invoice, SendInvoice $action): RedirectResponse
+    public function send(Request $request, Invoice $invoice, SendInvoice $action): RedirectResponse
     {
         $this->authorize('send', $invoice);
-        $action->handle($invoice, tenant('name'));
+        $action->handle($invoice, tenant('name'), $request->user());
 
         $message = $invoice->client->email
             ? 'Invoice sent to '.$invoice->client->email
             : 'Invoice marked as sent (no client email on file).';
 
         return redirect()->route('tenant.invoices.show', $invoice)->with('success', $message);
+    }
+
+    public function remind(Request $request, Invoice $invoice, SendInvoiceReminder $action): RedirectResponse
+    {
+        $this->authorize('remind', $invoice);
+        $action->handle($invoice, tenant('name'), $request->user());
+
+        return redirect()
+            ->route('tenant.invoices.show', $invoice)
+            ->with('success', 'Reminder sent to '.$invoice->client->email.'.');
     }
 
     public function pdf(Invoice $invoice): HttpResponse

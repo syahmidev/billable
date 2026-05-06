@@ -10,6 +10,8 @@
 
     const headTitle = computed(() => {
         if (page.url.startsWith('/billing')) return 'Billing'
+        if (page.url.startsWith('/team')) return 'Team'
+        if (page.url.startsWith('/activity')) return 'Activity'
         if (page.url.startsWith('/clients/create')) return 'New Client'
         if (page.url.startsWith('/clients')) return 'Clients'
         if (page.url.startsWith('/invoices/create')) return 'New Invoice'
@@ -47,7 +49,24 @@
             active: () => page.url.startsWith('/billing'),
             icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
         },
+        {
+            href: '/team',
+            label: 'Team',
+            ownerOnly: true,
+            active: () => page.url.startsWith('/team'),
+            icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+        },
+        {
+            href: '/activity',
+            label: 'Activity',
+            active: () => page.url.startsWith('/activity'),
+            icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+        },
     ]
+
+    const visibleNavItems = computed(() =>
+        navItems.filter((item) => !item.ownerOnly || user?.role === 'owner')
+    )
 </script>
 
 <template>
@@ -123,7 +142,7 @@
 
                     <nav class="flex-1 space-y-1 px-3 py-4">
                         <a
-                            v-for="item in navItems"
+                            v-for="item in visibleNavItems"
                             :key="item.href"
                             :href="item.href"
                             class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-white/5 hover:text-white"

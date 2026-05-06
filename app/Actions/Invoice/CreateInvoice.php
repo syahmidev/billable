@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace App\Actions\Invoice;
 
+use App\Actions\Activity\RecordActivity;
+use App\Enums\ActivityType;
 use App\Enums\InvoiceStatus;
 use App\Models\Invoice;
+use App\Models\User;
 use App\Support\InvoiceTotals;
 use Illuminate\Support\Str;
 
 class CreateInvoice
 {
-    public function handle(array $data): Invoice
+    public function __construct(private readonly RecordActivity $activity) {}
+
+    public function handle(array $data, ?User $actor = null): Invoice
     {
         $totals = InvoiceTotals::fromItems(
             $data['items'],
@@ -41,6 +46,14 @@ class CreateInvoice
                 'line_total' => InvoiceTotals::lineTotal($item),
             ]);
         }
+
+        $this->activity->handle(
+            type: ActivityType::InvoiceCreated,
+            description: "{$invoice->invoice_number} was created.",
+            actor: $actor,
+            subject: $invoice,
+            metadata: ['total' => (float) $invoice->total],
+        );
 
         return $invoice;
     }

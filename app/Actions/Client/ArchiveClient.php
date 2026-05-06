@@ -9,21 +9,22 @@ use App\Enums\ActivityType;
 use App\Models\Client;
 use App\Models\User;
 
-class CreateClient
+class ArchiveClient
 {
     public function __construct(private readonly RecordActivity $activity) {}
 
-    public function handle(array $data, ?User $actor = null): Client
+    public function handle(Client $client, ?User $actor = null): void
     {
-        $client = Client::create($data);
+        $clientName = $client->name;
+        $clientId = $client->id;
+
+        $client->delete();
 
         $this->activity->handle(
-            type: ActivityType::ClientCreated,
-            description: "{$client->name} was added as a client.",
+            type: ActivityType::ClientArchived,
+            description: "{$clientName} was archived.",
             actor: $actor,
-            subject: $client,
+            metadata: ['client_id' => $clientId],
         );
-
-        return $client;
     }
 }

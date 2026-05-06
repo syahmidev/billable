@@ -24,4 +24,12 @@ enum InvoiceStatus: string
             self::Overdue->value,
         ];
     }
+
+    public static function remindableValues(): array
+    {
+        return [
+            self::Sent->value,
+            self::Overdue->value,
+        ];
+    }
 }

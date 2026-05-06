@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['invoice_number', 'client_id', 'status', 'issue_date', 'due_date', 'subtotal', 'discount_percent', 'tax_percent', 'total', 'notes', 'sent_at', 'payment_token', 'stripe_payment_intent_id'])]
+#[Fillable(['invoice_number', 'client_id', 'status', 'issue_date', 'due_date', 'subtotal', 'discount_percent', 'tax_percent', 'total', 'notes', 'sent_at', 'reminders_sent', 'last_reminded_at', 'payment_token', 'stripe_payment_intent_id'])]
 class Invoice extends Model
 {
     use SoftDeletes;
@@ -36,6 +36,7 @@ class Invoice extends Model
             'tax_percent' => 'decimal:2',
             'total' => 'decimal:2',
             'sent_at' => 'datetime',
+            'last_reminded_at' => 'datetime',
         ];
     }
 
@@ -44,6 +45,11 @@ class Invoice extends Model
         $next = static::withTrashed()->count() + 1;
 
         return 'INV-'.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+    }
+
+    public static function remindableStatuses(): array
+    {
+        return InvoiceStatus::remindableValues();
     }
 
     public function discountAmount(): float
