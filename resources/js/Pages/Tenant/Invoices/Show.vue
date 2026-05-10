@@ -91,14 +91,14 @@ function fmt(n) { return Number(n).toFixed(2) }
                         PDF
                     </a>
                     <a
-                        v-if="invoice.status === 'draft'"
+                        v-if="invoice.status === 'draft' && invoice.can?.update"
                         :href="`/invoices/${invoice.id}/edit`"
                         class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium rounded-lg transition-colors"
                     >
                         Edit
                     </a>
                     <button
-                        v-if="invoice.status === 'draft' || invoice.status === 'sent'"
+                        v-if="(invoice.status === 'draft' || invoice.status === 'sent') && invoice.can?.send"
                         @click="send"
                         class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors"
                     >
@@ -108,7 +108,7 @@ function fmt(n) { return Number(n).toFixed(2) }
                         {{ invoice.status === 'sent' ? 'Resend' : 'Send' }}
                     </button>
                     <button
-                        v-if="invoice.can_send_reminder"
+                        v-if="invoice.can?.remind"
                         @click="remind"
                         class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-300 text-sm font-medium rounded-lg transition-colors"
                     >
@@ -118,7 +118,7 @@ function fmt(n) { return Number(n).toFixed(2) }
                         Remind
                     </button>
                     <button
-                        v-if="invoice.status === 'draft'"
+                        v-if="invoice.status === 'draft' && invoice.can?.delete"
                         @click="deleteInvoice"
                         class="inline-flex items-center px-3.5 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 text-sm font-medium rounded-lg transition-colors"
                     >

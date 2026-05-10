@@ -8,6 +8,7 @@ defineProps({
 })
 
 const page = usePage()
+const permissions = page.props.permissions ?? {}
 
 const form = useForm({
     name: '',
@@ -63,7 +64,7 @@ function removeMember(member) {
             </div>
 
             <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
-                <form class="bg-gray-900 border border-white/10 rounded-xl p-6" @submit.prevent="submit">
+                <form v-if="permissions.team?.manage" class="bg-gray-900 border border-white/10 rounded-xl p-6" @submit.prevent="submit">
                     <h2 class="mb-5 text-sm font-semibold text-white">Add member</h2>
 
                     <div class="space-y-4">
@@ -126,7 +127,7 @@ function removeMember(member) {
                     </button>
                 </form>
 
-                <div class="xl:col-span-2 bg-gray-900 border border-white/10 rounded-xl overflow-hidden">
+                <div :class="permissions.team?.manage ? 'xl:col-span-2' : 'xl:col-span-3'" class="bg-gray-900 border border-white/10 rounded-xl overflow-hidden">
                     <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
                         <h2 class="text-sm font-semibold text-white">Members</h2>
                         <span class="text-xs text-gray-500">{{ members.length }} total</span>
@@ -151,7 +152,7 @@ function removeMember(member) {
                                 </div>
                             </div>
 
-                            <div class="flex items-center gap-2">
+                            <div v-if="permissions.team?.manage" class="flex items-center gap-2">
                                 <select
                                     :value="member.role"
                                     :disabled="member.is_current_user"

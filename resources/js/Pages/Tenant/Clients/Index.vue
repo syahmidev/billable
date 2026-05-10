@@ -1,6 +1,6 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { router } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
@@ -10,6 +10,8 @@ const props = defineProps({
 
 const search = ref(props.filters?.search ?? '')
 const hasSearch = computed(() => search.value.trim().length > 0)
+const page = usePage()
+const permissions = computed(() => page.props.permissions ?? {})
 
 let searchTimeout = null
 watch(search, (val) => {
@@ -35,6 +37,7 @@ function archive(id) {
                     <p class="text-sm text-gray-400 mt-1">Manage your client list</p>
                 </div>
                 <a
+                    v-if="permissions.clients?.create"
                     href="/clients/create"
                     class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors"
                 >
@@ -79,8 +82,8 @@ function archive(id) {
                             <td class="px-5 py-3.5 text-gray-400">{{ client.phone ?? '—' }}</td>
                             <td class="px-5 py-3.5 text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <a :href="`/clients/${client.id}/edit`" class="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-white/5 transition-colors">Edit</a>
-                                    <button @click="archive(client.id)" class="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded hover:bg-red-500/10 transition-colors">Archive</button>
+                                    <a v-if="permissions.clients?.update" :href="`/clients/${client.id}/edit`" class="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-white/5 transition-colors">Edit</a>
+                                    <button v-if="permissions.clients?.delete" @click="archive(client.id)" class="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded hover:bg-red-500/10 transition-colors">Archive</button>
                                 </div>
                             </td>
                         </tr>
@@ -108,7 +111,7 @@ function archive(id) {
                     >
                         Clear search
                     </button>
-                    <a v-else href="/clients/create" class="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors">
+                    <a v-else-if="permissions.clients?.create" href="/clients/create" class="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors">
                         New client
                     </a>
                 </div>

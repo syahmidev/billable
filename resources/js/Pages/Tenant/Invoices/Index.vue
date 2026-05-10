@@ -1,6 +1,6 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { router } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
@@ -12,6 +12,8 @@ const props = defineProps({
 const statusFilter = ref(props.filters?.status ?? '')
 const clientFilter = ref(props.filters?.client_id ?? '')
 const hasFilters = computed(() => Boolean(statusFilter.value || clientFilter.value))
+const page = usePage()
+const permissions = computed(() => page.props.permissions ?? {})
 
 watch([statusFilter, clientFilter], () => {
     router.get('/invoices', {
@@ -39,6 +41,7 @@ const statusColors = {
                     <p class="text-sm text-gray-400 mt-1">Track and manage your invoices</p>
                 </div>
                 <a
+                    v-if="permissions.invoices?.create"
                     href="/invoices/create"
                     class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors"
                 >
@@ -100,7 +103,7 @@ const statusColors = {
                             <td class="px-5 py-3.5 text-gray-400">{{ invoice.due_date }}</td>
                             <td class="px-5 py-3.5 text-right text-white font-medium">${{ Number(invoice.total).toFixed(2) }}</td>
                             <td class="px-5 py-3.5 text-right">
-                                <a :href="`/invoices/${invoice.id}/edit`" class="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-white/5 transition-colors">Edit</a>
+                                <a v-if="permissions.invoices?.update" :href="`/invoices/${invoice.id}/edit`" class="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-white/5 transition-colors">Edit</a>
                             </td>
                         </tr>
                     </tbody>
@@ -127,7 +130,7 @@ const statusColors = {
                     >
                         Clear filters
                     </button>
-                    <a v-else href="/invoices/create" class="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors">
+                    <a v-else-if="permissions.invoices?.create" href="/invoices/create" class="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors">
                         New invoice
                     </a>
                 </div>

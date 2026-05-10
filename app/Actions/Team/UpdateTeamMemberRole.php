@@ -7,6 +7,7 @@ namespace App\Actions\Team;
 use App\Actions\Activity\RecordActivity;
 use App\Enums\ActivityType;
 use App\Enums\UserRole;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
@@ -22,7 +23,9 @@ class UpdateTeamMemberRole
             ]);
         }
 
+        Role::findOrCreate($role->value);
         $member->update(['role' => $role->value]);
+        $member->syncRoles($role->value);
 
         $this->activity->handle(
             type: ActivityType::TeamMemberUpdated,

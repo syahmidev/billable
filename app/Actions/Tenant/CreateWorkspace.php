@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Tenant;
 
 use App\Enums\UserRole;
+use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\AppUrl;
@@ -36,5 +37,7 @@ class CreateWorkspace
         $tenant->domains()->create(['domain' => $domain]);
 
         $user->update(['tenant_id' => $tenant->id, 'role' => UserRole::Owner->value]);
+        Role::findOrCreate(UserRole::Owner->value);
+        $user->syncRoles(UserRole::Owner->value);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tenant;
 
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -12,7 +13,7 @@ class UpdateTeamMemberRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isOwner() === true
+        return $this->user()?->hasTenantPermission(Permission::TeamManage) === true
             && $this->user()->belongsToTenant((string) tenant('id'));
     }
 

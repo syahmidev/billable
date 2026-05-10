@@ -21,4 +21,23 @@ enum UserRole: string
     {
         return array_map(fn (self $role) => $role->value, self::cases());
     }
+
+    public function permissions(): array
+    {
+        return match ($this) {
+            self::Owner => Permission::values(),
+            self::Member => [
+                Permission::ActivityView->value,
+                Permission::BillingView->value,
+                Permission::ClientsCreate->value,
+                Permission::ClientsUpdate->value,
+                Permission::ClientsView->value,
+                Permission::InvoicesCreate->value,
+                Permission::InvoicesRemind->value,
+                Permission::InvoicesSend->value,
+                Permission::InvoicesUpdate->value,
+                Permission::InvoicesView->value,
+            ],
+        };
+    }
 }

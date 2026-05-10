@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { router } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
+import { computed } from 'vue'
 
 const props = defineProps({
     client: Object,
@@ -11,6 +12,9 @@ function archive() {
     if (!confirm(`Archive ${props.client.name}?`)) return
     router.delete(`/clients/${props.client.id}`)
 }
+
+const page = usePage()
+const permissions = computed(() => page.props.permissions ?? {})
 
 const statusColors = {
     draft: 'bg-gray-800 text-gray-400',
@@ -39,6 +43,7 @@ const statusColors = {
                 </div>
                 <div class="flex items-center gap-2">
                     <a
+                        v-if="permissions.invoices?.create"
                         :href="`/invoices/create?client_id=${client.id}`"
                         class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors"
                     >
@@ -47,10 +52,10 @@ const statusColors = {
                         </svg>
                         New Invoice
                     </a>
-                    <a :href="`/clients/${client.id}/edit`" class="px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium rounded-lg transition-colors">
+                    <a v-if="permissions.clients?.update" :href="`/clients/${client.id}/edit`" class="px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium rounded-lg transition-colors">
                         Edit
                     </a>
-                    <button @click="archive" class="px-3.5 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 text-sm font-medium rounded-lg transition-colors">
+                    <button v-if="permissions.clients?.delete" @click="archive" class="px-3.5 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 text-sm font-medium rounded-lg transition-colors">
                         Archive
                     </button>
                 </div>

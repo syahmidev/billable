@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Models\Permission;
+use App\Models\Role;
 use Spatie\Permission\DefaultTeamResolver;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 return [
 
@@ -216,6 +216,6 @@ return [
          * file. Using 'default' here means to use the `default` set in cache.php.
          */
 
-        'store' => 'default',
+        'store' => env('PERMISSION_CACHE_STORE', 'array'),
     ],
 ];

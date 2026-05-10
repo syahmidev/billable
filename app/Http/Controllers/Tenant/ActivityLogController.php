@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ActivityLogController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        abort_unless($request->user()?->hasTenantPermission(Permission::ActivityView), 403);
+
         $activities = ActivityLog::query()
             ->latest('occurred_at')
             ->paginate(20)

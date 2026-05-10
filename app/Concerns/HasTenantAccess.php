@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Concerns;
 
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Support\AppUrl;
@@ -19,6 +20,21 @@ trait HasTenantAccess
     public function isOwner(): bool
     {
         return $this->role === UserRole::Owner->value;
+    }
+
+    public function hasTenantPermission(Permission $permission): bool
+    {
+        if ($this->isOwner()) {
+            return true;
+        }
+
+        if ($this->can($permission->value)) {
+            return true;
+        }
+
+        $role = UserRole::tryFrom((string) $this->role);
+
+        return $role !== null && in_array($permission->value, $role->permissions(), true);
     }
 
     public function belongsToTenant(string $tenantId): bool

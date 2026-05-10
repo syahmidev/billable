@@ -14,13 +14,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Cashier\Billable;
+use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password', 'tenant_id', 'role', 'plan', 'is_admin'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use Billable, HasFactory, HasTenantAccess, Notifiable;
+    use Billable, HasFactory, HasRoles, HasTenantAccess, Notifiable;
 
     protected $connection = 'central';
 

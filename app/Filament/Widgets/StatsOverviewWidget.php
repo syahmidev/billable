@@ -21,7 +21,7 @@ class StatsOverviewWidget extends BaseWidget
         $totalTenants = Tenant::count();
         $activeSubs = Subscription::where('stripe_status', 'active')->count();
 
-        $mrr = (int) DB::connection('pgsql')
+        $mrr = (int) DB::connection('central')
             ->table('users')
             ->whereNotNull('plan')
             ->where('plan', '!=', PlanSlug::Free->value)

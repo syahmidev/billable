@@ -7,6 +7,7 @@ namespace App\Actions\Team;
 use App\Actions\Activity\RecordActivity;
 use App\Enums\ActivityType;
 use App\Enums\UserRole;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -16,14 +17,18 @@ class CreateTeamMember
 
     public function handle(array $data, User $actor, string $tenantId): User
     {
+        $role = UserRole::from($data['role'] ?? UserRole::Member->value);
+
         $member = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'tenant_id' => $tenantId,
-            'role' => $data['role'] ?? UserRole::Member->value,
+            'role' => $role->value,
             'plan' => $actor->plan,
         ]);
+        Role::findOrCreate($role->value);
+        $member->assignRole($role->value);
 
         $this->activity->handle(
             type: ActivityType::TeamMemberAdded,
@@ -32,7 +37,7 @@ class CreateTeamMember
             metadata: [
                 'member_id' => $member->id,
                 'member_email' => $member->email,
-                'role' => $member->role,
+                'role' => $role->value,
             ],
         );
 

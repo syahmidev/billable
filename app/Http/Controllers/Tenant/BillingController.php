@@ -8,6 +8,7 @@ use App\Actions\Activity\RecordActivity;
 use App\Actions\Billing\ActivateFreePlan;
 use App\Actions\Billing\StartSubscription;
 use App\Enums\ActivityType;
+use App\Enums\Permission;
 use App\Enums\PlanSlug;
 use App\Enums\SubscriptionStatus;
 use App\Enums\UserRole;
@@ -25,8 +26,11 @@ class BillingController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
+        abort_unless($user->hasTenantPermission(Permission::BillingView), 403);
+
         $billingOwner = $this->billingOwner() ?? $user;
-        $canManageBilling = $user->is($billingOwner);
+        $canManageBilling = $user->is($billingOwner)
+            && $user->hasTenantPermission(Permission::BillingManage);
         $subscription = $billingOwner->subscription('default');
         $currentPlan = $this->currentPlan($billingOwner, $subscription);
         $status = $subscription?->stripe_status ?? ($billingOwner->plan ?: 'none');
@@ -74,7 +78,7 @@ class BillingController extends Controller
         $user = $request->user();
         $billingOwner = $this->billingOwner() ?? $user;
 
-        abort_unless($user->is($billingOwner), 403);
+        abort_unless($user->is($billingOwner) && $user->hasTenantPermission(Permission::BillingManage), 403);
 
         if ($user->subscribed('default')) {
             return redirect()
@@ -117,7 +121,7 @@ class BillingController extends Controller
     {
         $billingOwner = $this->billingOwner() ?? $request->user();
 
-        abort_unless($request->user()->is($billingOwner), 403);
+        abort_unless($request->user()->is($billingOwner) && $request->user()->hasTenantPermission(Permission::BillingManage), 403);
         abort_unless($request->user()->hasStripeId(), 404);
 
         $url = $request->user()->billingPortalUrl(route('tenant.billing.index'));

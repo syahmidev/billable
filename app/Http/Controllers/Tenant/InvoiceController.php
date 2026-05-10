@@ -61,7 +61,7 @@ class InvoiceController extends Controller
         return redirect()->route('tenant.invoices.show', $invoice)->with('success', 'Invoice created.');
     }
 
-    public function show(Invoice $invoice): Response
+    public function show(Request $request, Invoice $invoice): Response
     {
         $invoice->load('client', 'items');
 
@@ -75,8 +75,13 @@ class InvoiceController extends Controller
                 ...$invoice->toArray(),
                 'discount_amount' => round($invoice->discountAmount(), 2),
                 'tax_amount' => round($invoice->taxAmount(), 2),
-                'can_send_reminder' => in_array($invoice->status, Invoice::remindableStatuses(), true)
-                    && (bool) $invoice->client?->email,
+                'can' => [
+                    'update' => $request->user()?->can('update', $invoice),
+                    'delete' => $request->user()?->can('delete', $invoice),
+                    'send' => $request->user()?->can('send', $invoice),
+                    'remind' => $request->user()?->can('remind', $invoice) && (bool) $invoice->client?->email,
+                ],
+                'can_send_reminder' => $request->user()?->can('remind', $invoice) && (bool) $invoice->client?->email,
                 'last_reminded_at' => $invoice->last_reminded_at?->diffForHumans(),
             ],
             'workspaceName' => tenant('name'),
