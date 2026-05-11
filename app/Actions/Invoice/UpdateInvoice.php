@@ -9,6 +9,7 @@ use App\Enums\ActivityType;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Support\InvoiceTotals;
+use Illuminate\Support\Facades\DB;
 
 class UpdateInvoice
 {
@@ -22,38 +23,40 @@ class UpdateInvoice
             $data['tax_percent'] ?? 0,
         );
 
-        $invoice->update([
-            'client_id' => $data['client_id'],
-            'issue_date' => $data['issue_date'],
-            'due_date' => $data['due_date'],
-            'subtotal' => $totals->subtotal,
-            'discount_percent' => $data['discount_percent'] ?? 0,
-            'tax_percent' => $data['tax_percent'] ?? 0,
-            'total' => $totals->total,
-            'notes' => $data['notes'] ?? null,
-        ]);
-
-        $invoice->items()->delete();
-
-        foreach ($data['items'] as $item) {
-            $invoice->items()->create([
-                'description' => $item['description'],
-                'quantity' => $item['quantity'],
-                'unit_price' => $item['unit_price'],
-                'line_total' => InvoiceTotals::lineTotal($item),
+        return DB::transaction(function () use ($invoice, $data, $actor, $totals): Invoice {
+            $invoice->update([
+                'client_id' => $data['client_id'],
+                'issue_date' => $data['issue_date'],
+                'due_date' => $data['due_date'],
+                'subtotal' => $totals->subtotal,
+                'discount_percent' => $data['discount_percent'] ?? 0,
+                'tax_percent' => $data['tax_percent'] ?? 0,
+                'total' => $totals->total,
+                'notes' => $data['notes'] ?? null,
             ]);
-        }
 
-        $invoice = $invoice->fresh('items');
+            $invoice->items()->delete();
 
-        $this->activity->handle(
-            type: ActivityType::InvoiceUpdated,
-            description: "{$invoice->invoice_number} was updated.",
-            actor: $actor,
-            subject: $invoice,
-            metadata: ['total' => (float) $invoice->total],
-        );
+            foreach ($data['items'] as $item) {
+                $invoice->items()->create([
+                    'description' => $item['description'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'line_total' => InvoiceTotals::lineTotal($item),
+                ]);
+            }
 
-        return $invoice;
+            $invoice = $invoice->fresh('items');
+
+            $this->activity->handle(
+                type: ActivityType::InvoiceUpdated,
+                description: "{$invoice->invoice_number} was updated.",
+                actor: $actor,
+                subject: $invoice,
+                metadata: ['total' => (float) $invoice->total],
+            );
+
+            return $invoice;
+        });
     }
 }

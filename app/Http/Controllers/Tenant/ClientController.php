@@ -10,6 +10,8 @@ use App\Actions\Client\UpdateClient;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\SaveClientRequest;
 use App\Models\Client;
+use App\Queries\Tenant\ClientInvoiceHistoryQuery;
+use App\Queries\Tenant\ClientListingQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,19 +24,10 @@ class ClientController extends Controller
         $this->authorizeResource(Client::class, 'client');
     }
 
-    public function index(Request $request): Response
+    public function index(Request $request, ClientListingQuery $clients): Response
     {
-        $clients = Client::query()
-            ->when($request->search, fn ($q, $s) => $q
-                ->where('name', 'ilike', "%{$s}%")
-                ->orWhere('email', 'ilike', "%{$s}%")
-                ->orWhere('company', 'ilike', "%{$s}%"))
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
-
         return Inertia::render('Tenant/Clients/Index', [
-            'clients' => $clients,
+            'clients' => $clients->handle($request->only('search')),
             'filters' => $request->only('search'),
         ]);
     }
@@ -51,18 +44,11 @@ class ClientController extends Controller
         return redirect()->route('tenant.clients.index')->with('success', 'Client created.');
     }
 
-    public function show(Client $client): Response
+    public function show(Client $client, ClientInvoiceHistoryQuery $invoiceHistory): Response
     {
         return Inertia::render('Tenant/Clients/Show', [
             'client' => $client,
-            'invoices' => $client->invoices()->with('items')->latest()->get()->map(fn ($inv) => [
-                'id' => $inv->id,
-                'invoice_number' => $inv->invoice_number,
-                'status' => $inv->status,
-                'issue_date' => $inv->issue_date->format('M d, Y'),
-                'due_date' => $inv->due_date->format('M d, Y'),
-                'total' => (float) $inv->total,
-            ]),
+            'invoices' => $invoiceHistory->handle($client),
         ]);
     }
 

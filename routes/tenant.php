@@ -17,6 +17,7 @@ Route::middleware([
     'web',
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
+    'tenant.active',
 ])->group(function (): void {
     // Public invoice payment pages — no auth required
     Route::get('/pay/{token}', [InvoicePaymentController::class, 'show'])

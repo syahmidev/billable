@@ -9,12 +9,17 @@ use App\Enums\ActivityType;
 use App\Enums\InvoiceStatus;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Services\InvoiceNumberService;
 use App\Support\InvoiceTotals;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class CreateInvoice
 {
-    public function __construct(private readonly RecordActivity $activity) {}
+    public function __construct(
+        private readonly RecordActivity $activity,
+        private readonly InvoiceNumberService $invoiceNumbers,
+    ) {}
 
     public function handle(array $data, ?User $actor = null): Invoice
     {
@@ -24,37 +29,39 @@ class CreateInvoice
             $data['tax_percent'] ?? 0,
         );
 
-        $invoice = Invoice::create([
-            'invoice_number' => Invoice::generateNumber(),
-            'client_id' => $data['client_id'],
-            'status' => InvoiceStatus::Draft->value,
-            'issue_date' => $data['issue_date'],
-            'due_date' => $data['due_date'],
-            'subtotal' => $totals->subtotal,
-            'discount_percent' => $data['discount_percent'] ?? 0,
-            'tax_percent' => $data['tax_percent'] ?? 0,
-            'total' => $totals->total,
-            'notes' => $data['notes'] ?? null,
-            'payment_token' => (string) Str::uuid(),
-        ]);
-
-        foreach ($data['items'] as $item) {
-            $invoice->items()->create([
-                'description' => $item['description'],
-                'quantity' => $item['quantity'],
-                'unit_price' => $item['unit_price'],
-                'line_total' => InvoiceTotals::lineTotal($item),
+        return DB::transaction(function () use ($data, $actor, $totals): Invoice {
+            $invoice = Invoice::create([
+                'invoice_number' => $this->invoiceNumbers->next(),
+                'client_id' => $data['client_id'],
+                'status' => InvoiceStatus::Draft->value,
+                'issue_date' => $data['issue_date'],
+                'due_date' => $data['due_date'],
+                'subtotal' => $totals->subtotal,
+                'discount_percent' => $data['discount_percent'] ?? 0,
+                'tax_percent' => $data['tax_percent'] ?? 0,
+                'total' => $totals->total,
+                'notes' => $data['notes'] ?? null,
+                'payment_token' => (string) Str::uuid(),
             ]);
-        }
 
-        $this->activity->handle(
-            type: ActivityType::InvoiceCreated,
-            description: "{$invoice->invoice_number} was created.",
-            actor: $actor,
-            subject: $invoice,
-            metadata: ['total' => (float) $invoice->total],
-        );
+            foreach ($data['items'] as $item) {
+                $invoice->items()->create([
+                    'description' => $item['description'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'line_total' => InvoiceTotals::lineTotal($item),
+                ]);
+            }
 
-        return $invoice;
+            $this->activity->handle(
+                type: ActivityType::InvoiceCreated,
+                description: "{$invoice->invoice_number} was created.",
+                actor: $actor,
+                subject: $invoice,
+                metadata: ['total' => (float) $invoice->total],
+            );
+
+            return $invoice;
+        });
     }
 }

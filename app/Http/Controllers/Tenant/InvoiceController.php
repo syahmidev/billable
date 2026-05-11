@@ -13,6 +13,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\SaveInvoiceRequest;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Queries\Tenant\InvoiceListingQuery;
 use App\Support\AppUrl;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -28,17 +29,10 @@ class InvoiceController extends Controller
         $this->authorizeResource(Invoice::class, 'invoice');
     }
 
-    public function index(Request $request): Response
+    public function index(Request $request, InvoiceListingQuery $invoices): Response
     {
-        $invoices = Invoice::with('client')
-            ->when($request->status, fn ($q, $s) => $q->where('status', $s))
-            ->when($request->client_id, fn ($q, $id) => $q->where('client_id', $id))
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
-
         return Inertia::render('Tenant/Invoices/Index', [
-            'invoices' => $invoices,
+            'invoices' => $invoices->handle($request->only('status', 'client_id')),
             'clients' => Client::orderBy('name')->get(['id', 'name']),
             'filters' => $request->only('status', 'client_id'),
         ]);

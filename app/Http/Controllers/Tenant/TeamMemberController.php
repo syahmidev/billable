@@ -13,6 +13,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreTeamMemberRequest;
 use App\Http\Requests\Tenant\UpdateTeamMemberRoleRequest;
 use App\Models\User;
+use App\Queries\Tenant\TeamMemberListingQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,26 +21,12 @@ use Inertia\Response;
 
 class TeamMemberController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, TeamMemberListingQuery $members): Response
     {
         abort_unless($request->user()?->hasTenantPermission(Permission::TeamView), 403);
 
-        $members = User::query()
-            ->where('tenant_id', tenant('id'))
-            ->get()
-            ->sortBy(fn (User $member): string => ($member->role === UserRole::Owner->value ? '0' : '1').strtolower($member->name))
-            ->values()
-            ->map(fn (User $member): array => [
-                'id' => $member->id,
-                'name' => $member->name,
-                'email' => $member->email,
-                'role' => $member->role,
-                'is_current_user' => $member->is($request->user()),
-                'created_at' => $member->created_at?->format('M d, Y'),
-            ]);
-
         return Inertia::render('Tenant/Team/Index', [
-            'members' => $members,
+            'members' => $members->handle((string) tenant('id'), $request->user()),
             'roles' => array_map(fn (UserRole $role): array => [
                 'value' => $role->value,
                 'label' => $role->label(),

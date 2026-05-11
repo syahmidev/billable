@@ -40,13 +40,6 @@ class Invoice extends Model
         ];
     }
 
-    public static function generateNumber(): string
-    {
-        $next = static::withTrashed()->count() + 1;
-
-        return 'INV-'.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
-    }
-
     public static function remindableStatuses(): array
     {
         return InvoiceStatus::remindableValues();

@@ -17,6 +17,13 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 
     public static function getCustomColumns(): array
     {
-        return ['id'];
+        return ['id', 'name', 'is_suspended'];
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'is_suspended' => 'boolean',
+        ];
     }
 }
