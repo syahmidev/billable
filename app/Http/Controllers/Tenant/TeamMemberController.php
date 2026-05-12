@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Tenant;
 use App\Actions\Team\CreateTeamMember;
 use App\Actions\Team\RemoveTeamMember;
 use App\Actions\Team\UpdateTeamMemberRole;
-use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreTeamMemberRequest;
@@ -16,6 +15,7 @@ use App\Models\User;
 use App\Queries\Tenant\TeamMemberListingQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,7 +23,7 @@ class TeamMemberController extends Controller
 {
     public function index(Request $request, TeamMemberListingQuery $members): Response
     {
-        abort_unless($request->user()?->hasTenantPermission(Permission::TeamView), 403);
+        Gate::authorize('view-team-members');
 
         return Inertia::render('Tenant/Team/Index', [
             'members' => $members->handle((string) tenant('id'), $request->user()),
@@ -63,7 +63,7 @@ class TeamMemberController extends Controller
 
     public function destroy(Request $request, User $member, RemoveTeamMember $action): RedirectResponse
     {
-        abort_unless($request->user()?->hasTenantPermission(Permission::TeamManage), 403);
+        Gate::authorize('manage-team-members');
         $this->ensureTenantMember($member);
 
         $action->handle($member, $request->user());

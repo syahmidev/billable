@@ -8,13 +8,13 @@ use App\Actions\Activity\RecordActivity;
 use App\Actions\Billing\ActivateFreePlan;
 use App\Actions\Billing\StartSubscription;
 use App\Enums\ActivityType;
-use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Queries\Tenant\BillingOwnerQuery;
 use App\ViewModels\Tenant\BillingOverviewViewModel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
@@ -24,7 +24,7 @@ class BillingController extends Controller
     public function index(Request $request, BillingOverviewViewModel $billing): Response
     {
         $user = $request->user();
-        abort_unless($user->hasTenantPermission(Permission::BillingView), 403);
+        Gate::authorize('view-workspace-billing');
 
         return Inertia::render('Tenant/Billing/Index', $billing->toArray($user));
     }
@@ -40,7 +40,7 @@ class BillingController extends Controller
         $user = $request->user();
         $billingOwner = $billingOwnerQuery->handle((string) tenant('id')) ?? $user;
 
-        abort_unless($user->is($billingOwner) && $user->hasTenantPermission(Permission::BillingManage), 403);
+        Gate::authorize('manage-workspace-billing', $billingOwner);
 
         if ($user->subscribed('default')) {
             return redirect()
@@ -81,12 +81,13 @@ class BillingController extends Controller
 
     public function portal(Request $request, BillingOwnerQuery $billingOwnerQuery): SymfonyResponse
     {
-        $billingOwner = $billingOwnerQuery->handle((string) tenant('id')) ?? $request->user();
+        $user = $request->user();
+        $billingOwner = $billingOwnerQuery->handle((string) tenant('id')) ?? $user;
 
-        abort_unless($request->user()->is($billingOwner) && $request->user()->hasTenantPermission(Permission::BillingManage), 403);
-        abort_unless($request->user()->hasStripeId(), 404);
+        Gate::authorize('manage-workspace-billing', $billingOwner);
+        abort_unless($user->hasStripeId(), 404);
 
-        $url = $request->user()->billingPortalUrl(route('tenant.billing.index'));
+        $url = $user->billingPortalUrl(route('tenant.billing.index'));
 
         return Inertia::location($url);
     }

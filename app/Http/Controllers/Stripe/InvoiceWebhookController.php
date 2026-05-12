@@ -18,6 +18,7 @@ use Stancl\Tenancy\Facades\Tenancy;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Webhook;
 use Throwable;
+use UnexpectedValueException;
 
 class InvoiceWebhookController extends Controller
 {
@@ -25,13 +26,20 @@ class InvoiceWebhookController extends Controller
     {
         $payload = $request->getContent();
         $sigHeader = $request->header('Stripe-Signature');
+        $webhookSecret = config('billing.stripe_webhooks.invoice_secret');
+
+        if (! is_string($webhookSecret) || $webhookSecret === '') {
+            return response('Invoice webhook secret is not configured.', 500);
+        }
 
         try {
             $event = Webhook::constructEvent(
                 $payload,
                 $sigHeader,
-                config('cashier.webhook.secret')
+                $webhookSecret
             );
+        } catch (UnexpectedValueException) {
+            return response('Invalid payload.', 400);
         } catch (SignatureVerificationException) {
             return response('Invalid signature.', 400);
         }

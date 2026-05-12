@@ -24,6 +24,7 @@ Important: `https://billable.test/dashboard` should return `404`. `/dashboard` i
 | Database | PostgreSQL central database plus PostgreSQL tenant databases |
 | Billing subscriptions | Laravel Cashier 16, Stripe Checkout, Stripe Billing Portal |
 | Invoice payments | Stripe Payment Intents and a tenant-aware custom webhook |
+| Queues | Laravel database queue, stored on the central connection |
 | Roles and permissions | `spatie/laravel-permission` with central role/permission tables |
 | Admin panel | Filament 5 |
 | PDF generation | `barryvdh/laravel-dompdf` |
@@ -45,9 +46,9 @@ The CI workflow currently uses PHP 8.5. Local PHP only needs to satisfy Composer
 - Tenant subscription gate that allows `/billing` recovery while protecting app routes.
 - Tenant dashboard with revenue, outstanding, overdue, draft, client, recent invoice, and recent activity data.
 - Client CRUD with soft archive and invoice history.
-- Invoice CRUD with line items, discounts, tax, totals, PDF download, send action, and reminder action.
+- Invoice CRUD with line items, discounts, tax, totals, PDF download, queued send action, and queued reminder action.
 - Public tenant invoice payment page at `/pay/{token}` with throttled Payment Intent creation.
-- Stripe `payment_intent.succeeded` webhook logging, idempotency checks, tenant resolution, and payment receipt email.
+- Stripe `payment_intent.succeeded` webhook logging, idempotency checks, tenant resolution, and queued payment receipt email.
 - Workspace activity log for billing, clients, invoices, reminders, payments, and team changes.
 - Team member management with owner/member roles.
 - Permission-aware Inertia navigation and action visibility.
@@ -69,6 +70,7 @@ app/
 │   ├── Controllers/
 │   ├── Middleware/
 │   └── Requests/
+├── Jobs/
 ├── Mail/
 ├── Models/
 ├── Policies/
@@ -96,6 +98,7 @@ Current examples:
 - `app/Actions/Tenant/CreateWorkspace.php` creates the tenant, stores the domain, and assigns owner access.
 - `app/Actions/Invoice/CreateInvoice.php` creates invoice headers, invoice items, totals, and activity.
 - `app/Actions/Invoice/MarkInvoicePaid.php` marks tenant invoices paid after Stripe confirms payment.
+- `app/Jobs/Invoice/*` sends invoice, reminder, and payment receipt emails from the queue.
 - `app/Queries/Tenant/*` contains tenant listing reads for clients, invoices, activity, team members, and billing owners.
 - `app/Services/InvoiceNumberService.php` issues tenant invoice numbers from a locked sequence row.
 - `app/ViewModels/Tenant/*` prepares page payloads for dashboard and billing overview screens.
@@ -186,7 +189,8 @@ Server-side enforcement currently uses:
 
 - `ClientPolicy`
 - `InvoicePolicy`
-- explicit permission checks in billing, team, activity, and middleware
+- Gates for billing, team, and activity workspace abilities
+- shared Inertia permission props for UI visibility
 
 Frontend gating uses shared Inertia `permissions` props from `HandleInertiaRequests`. Treat those props as UI visibility only; policies and server checks are the real enforcement layer.
 
@@ -245,10 +249,14 @@ DB_CACHE_CONNECTION=central
 PERMISSION_CACHE_STORE=array
 
 QUEUE_CONNECTION=database
+DB_QUEUE_CONNECTION=central
 
 STRIPE_KEY=pk_test_...
 STRIPE_SECRET=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_INVOICE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_PRO=price_...
+STRIPE_PRICE_BUSINESS=price_...
 CASHIER_CURRENCY=usd
 
 MAIL_MAILER=log
@@ -304,6 +312,8 @@ Seeders create:
 - default roles and permissions
 - default super admin user
 
+Paid plan Stripe Price IDs are read from `STRIPE_PRICE_PRO` and `STRIPE_PRICE_BUSINESS`. If those values are blank, seeders will not overwrite existing paid plan Price IDs; production values can also be managed in Filament.
+
 When a new workspace is created through onboarding, Stancl Tenancy creates that tenant database and runs tenant migrations from `database/migrations/tenant`.
 
 ### 6. Run Frontend Assets
@@ -331,7 +341,22 @@ https://billable.test/stripe/webhook
 https://billable.test/stripe/invoice-webhook
 ```
 
-Both handlers currently read the same Cashier webhook secret from `STRIPE_WEBHOOK_SECRET`, so make sure the endpoint you are testing uses the matching Stripe CLI signing secret.
+Use `STRIPE_WEBHOOK_SECRET` for the Cashier subscription endpoint. Use `STRIPE_INVOICE_WEBHOOK_SECRET` for the custom invoice-payment endpoint. If `STRIPE_INVOICE_WEBHOOK_SECRET` is blank, the invoice webhook falls back to `STRIPE_WEBHOOK_SECRET` for simpler one-secret local setups.
+
+Both endpoints fail closed when the required signing secret is missing, so do not leave `STRIPE_WEBHOOK_SECRET` blank while testing Stripe callbacks.
+
+For local development with two Stripe CLI listeners, run one listener per endpoint and copy each printed `whsec_...` value into the matching environment variable:
+
+```bash
+stripe listen --forward-to https://billable.test/stripe/webhook
+stripe listen --events payment_intent.succeeded --forward-to https://billable.test/stripe/invoice-webhook
+```
+
+After changing webhook secrets in `.env`, clear cached config if needed:
+
+```bash
+php artisan config:clear
+```
 
 ---
 
@@ -438,6 +463,8 @@ app/
 │   │   └── Tenant/
 │   ├── Middleware/
 │   └── Requests/
+├── Jobs/
+│   └── Invoice/
 ├── Mail/
 ├── Models/
 ├── Policies/
@@ -484,33 +511,23 @@ routes/
 - `App\Support\AppUrl` builds central URLs, tenant domains, and tenant URLs from `APP_URL`.
 - `App\Actions\Tenant\CreateWorkspace` stores the full tenant domain in the `domains` table.
 - `App\Concerns\HasTenantAccess` resolves tenant membership, owner checks, permissions, and tenant URLs.
+- Workspace billing, team, and activity authorization is mapped through Gates in `App\Providers\AppServiceProvider`.
 - `CreateInvoice` and `UpdateInvoice` wrap multi-table invoice writes in database transactions.
 - Tenant invoice numbers are issued from `invoice_number_sequences` with `lockForUpdate()` instead of `count() + 1`.
 - `App\Support\InvoiceTotals` centralizes invoice total math.
+- Paid plan Stripe Price IDs are configured through `config/billing.php` from `STRIPE_PRICE_PRO` and `STRIPE_PRICE_BUSINESS`.
+- The custom invoice Stripe webhook reads `STRIPE_INVOICE_WEBHOOK_SECRET`, falling back to `STRIPE_WEBHOOK_SECRET` when a separate invoice secret is not configured.
+- The Cashier subscription webhook is guarded by `EnsureCashierWebhookSecretIsConfigured` so a missing `STRIPE_WEBHOOK_SECRET` does not leave it unsigned.
 - SEO defaults live in `config/seo.php` and are shared with Inertia through `HandleInertiaRequests`.
 - `routes/console.php` registers `invoices:send-reminders` and schedules it daily at `09:00`.
-- Invoice emails, reminder emails, and receipt emails are currently sent synchronously.
+- Invoice emails, reminder emails, and receipt emails are queued through `app/Jobs/Invoice`.
+- Database queue jobs use `DB_QUEUE_CONNECTION`, which should stay on the central connection for tenant apps.
 
 ---
 
 ## Remaining Improvement Backlog And Concerns
 
-These are the main things worth improving next:
-
-1. Queue email and external side effects.
-   Invoice sends, reminders, and receipts currently happen synchronously. Jobs would make retries, failures, and slower mail providers easier to handle.
-
-2. Keep authorization style consistent.
-   Client and invoice authorization use policies, while billing, team, and activity mostly use explicit permission checks. This is functional, but Gates or dedicated policies would make the authorization map easier to audit.
-
-3. Review Stripe webhook secret handling for local development.
-   Both webhook handlers read the same Cashier webhook secret. If separate Stripe CLI listeners are used, each listener may generate its own signing secret, so one endpoint can fail signature validation unless the secrets are aligned.
-
-4. Move production Stripe price IDs out of seed assumptions.
-   Plan records can be managed in Filament, but seeded Stripe Price IDs should be treated as environment-specific test data and verified before production use.
-
-5. Clean default project metadata when ready.
-   `composer.json` still has Laravel skeleton metadata. Update package name, description, and keywords when the project identity is finalized.
+The initial high-priority review backlog is now complete. Add new concerns here as the app grows or after the next focused review pass.
 
 ---
 

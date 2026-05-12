@@ -9,6 +9,7 @@ use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Seo\RobotsController;
 use App\Http\Controllers\Seo\SitemapController;
 use App\Http\Controllers\Stripe\InvoiceWebhookController;
+use App\Http\Middleware\EnsureCashierWebhookSecretIsConfigured;
 use Illuminate\Support\Facades\Route;
 use Laravel\Cashier\Http\Controllers\WebhookController;
 
@@ -34,6 +35,7 @@ Route::middleware('auth')->group(function (): void {
 });
 
 Route::post('/stripe/webhook', [WebhookController::class, 'handleWebhook'])
+    ->middleware(EnsureCashierWebhookSecretIsConfigured::class)
     ->name('cashier.webhook');
 
 Route::post('/stripe/invoice-webhook', [InvoiceWebhookController::class, 'handle'])

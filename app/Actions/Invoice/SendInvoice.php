@@ -7,10 +7,9 @@ namespace App\Actions\Invoice;
 use App\Actions\Activity\RecordActivity;
 use App\Enums\ActivityType;
 use App\Enums\InvoiceStatus;
-use App\Mail\InvoiceMail;
+use App\Jobs\Invoice\SendInvoiceEmail;
 use App\Models\Invoice;
 use App\Models\User;
-use Illuminate\Support\Facades\Mail;
 
 class SendInvoice
 {
@@ -24,13 +23,13 @@ class SendInvoice
         ]);
 
         if ($invoice->client->email) {
-            Mail::to($invoice->client->email)
-                ->send(new InvoiceMail($invoice->load('client', 'items'), $workspaceName));
+            SendInvoiceEmail::dispatch($invoice->id, $invoice->client->email, $workspaceName)
+                ->afterCommit();
         }
 
         $this->activity->handle(
             type: ActivityType::InvoiceSent,
-            description: "{$invoice->invoice_number} was sent.",
+            description: "{$invoice->invoice_number} was queued for delivery.",
             actor: $actor,
             subject: $invoice,
             metadata: ['client_email' => $invoice->client->email],

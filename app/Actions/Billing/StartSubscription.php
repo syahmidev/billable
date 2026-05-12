@@ -6,6 +6,7 @@ namespace App\Actions\Billing;
 
 use App\Models\Plan;
 use App\Models\User;
+use Illuminate\Validation\ValidationException;
 use Laravel\Cashier\Checkout;
 
 class StartSubscription
@@ -16,6 +17,12 @@ class StartSubscription
         ?string $successUrl = null,
         ?string $cancelUrl = null,
     ): Checkout {
+        if (! $plan->isFree() && blank($plan->stripe_price_id)) {
+            throw ValidationException::withMessages([
+                'plan' => 'This plan is missing a Stripe Price ID. Configure it before starting checkout.',
+            ]);
+        }
+
         return $user
             ->newSubscription('default', $plan->stripe_price_id)
             ->checkout([

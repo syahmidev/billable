@@ -7,10 +7,9 @@ namespace App\Actions\Invoice;
 use App\Actions\Activity\RecordActivity;
 use App\Enums\ActivityType;
 use App\Enums\InvoiceStatus;
-use App\Mail\InvoiceReminderMail;
+use App\Jobs\Invoice\SendInvoiceReminderEmail;
 use App\Models\Invoice;
 use App\Models\User;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class SendInvoiceReminder
@@ -37,18 +36,18 @@ class SendInvoiceReminder
             ? InvoiceStatus::Overdue->value
             : $invoice->status;
 
-        Mail::to($invoice->client->email)
-            ->send(new InvoiceReminderMail($invoice, $workspaceName));
-
         $invoice->forceFill([
             'status' => $status,
             'reminders_sent' => ((int) $invoice->reminders_sent) + 1,
             'last_reminded_at' => now(),
         ])->save();
 
+        SendInvoiceReminderEmail::dispatch($invoice->id, $invoice->client->email, $workspaceName)
+            ->afterCommit();
+
         $this->activity->handle(
             type: ActivityType::InvoiceReminderSent,
-            description: "Reminder sent for {$invoice->invoice_number}.",
+            description: "Reminder queued for {$invoice->invoice_number}.",
             actor: $actor,
             subject: $invoice,
             metadata: [

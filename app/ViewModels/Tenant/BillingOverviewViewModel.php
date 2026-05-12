@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\ViewModels\Tenant;
 
-use App\Enums\Permission;
 use App\Enums\PlanSlug;
 use App\Enums\SubscriptionStatus;
 use App\Models\Plan;
 use App\Models\User;
 use App\Queries\Tenant\BillingOwnerQuery;
+use Illuminate\Support\Facades\Gate;
 
 class BillingOverviewViewModel
 {
@@ -18,8 +18,7 @@ class BillingOverviewViewModel
     public function toArray(User $user): array
     {
         $billingOwner = $this->billingOwnerQuery->handle((string) tenant('id')) ?? $user;
-        $canManageBilling = $user->is($billingOwner)
-            && $user->hasTenantPermission(Permission::BillingManage);
+        $canManageBilling = Gate::forUser($user)->allows('manage-workspace-billing', $billingOwner);
         $subscription = $billingOwner->subscription('default');
         $currentPlan = $this->currentPlan($billingOwner, $subscription);
         $status = $subscription?->stripe_status ?? ($billingOwner->plan ?: 'none');

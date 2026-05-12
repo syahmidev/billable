@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
-use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Queries\Tenant\ActivityLogListingQuery;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ActivityLogController extends Controller
 {
-    public function index(Request $request, ActivityLogListingQuery $activities): Response
+    public function index(ActivityLogListingQuery $activities): Response
     {
-        abort_unless($request->user()?->hasTenantPermission(Permission::ActivityView), 403);
+        Gate::authorize('view-workspace-activity');
 
         return Inertia::render('Tenant/Activity/Index', [
             'activities' => $activities->handle(),

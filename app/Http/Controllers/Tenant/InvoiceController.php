@@ -113,7 +113,7 @@ class InvoiceController extends Controller
         $action->handle($invoice, tenant('name'), $request->user());
 
         $message = $invoice->client->email
-            ? 'Invoice sent to '.$invoice->client->email
+            ? 'Invoice email queued for '.$invoice->client->email
             : 'Invoice marked as sent (no client email on file).';
 
         return redirect()->route('tenant.invoices.show', $invoice)->with('success', $message);
@@ -126,7 +126,7 @@ class InvoiceController extends Controller
 
         return redirect()
             ->route('tenant.invoices.show', $invoice)
-            ->with('success', 'Reminder sent to '.$invoice->client->email.'.');
+            ->with('success', 'Reminder email queued for '.$invoice->client->email.'.');
     }
 
     public function pdf(Invoice $invoice): HttpResponse

@@ -7,9 +7,8 @@ namespace App\Actions\Invoice;
 use App\Actions\Activity\RecordActivity;
 use App\Enums\ActivityType;
 use App\Enums\InvoiceStatus;
-use App\Mail\PaymentReceiptMail;
+use App\Jobs\Invoice\SendPaymentReceiptEmail;
 use App\Models\Invoice;
-use Illuminate\Support\Facades\Mail;
 
 class MarkInvoicePaid
 {
@@ -27,8 +26,8 @@ class MarkInvoicePaid
         ])->save();
 
         if ($invoice->client->email) {
-            Mail::to($invoice->client->email)
-                ->send(new PaymentReceiptMail($invoice->load('client', 'items'), $workspaceName));
+            SendPaymentReceiptEmail::dispatch($invoice->id, $invoice->client->email, $workspaceName)
+                ->afterCommit();
         }
 
         $this->activity->handle(

@@ -12,11 +12,15 @@ class PlanSeeder extends Seeder
 {
     public function run(): void
     {
+        $stripePriceIds = [
+            PlanSlug::Pro->value => config('billing.stripe_prices.pro'),
+            PlanSlug::Business->value => config('billing.stripe_prices.business'),
+        ];
+
         $plans = [
             [
                 'name' => 'Free',
                 'slug' => PlanSlug::Free->value,
-                'stripe_price_id' => 'price_1TTGRPF0HPxuwMFJEqNSURFQ',
                 'price' => 0,
                 'features' => [
                     'Up to 3 clients',
@@ -28,7 +32,6 @@ class PlanSeeder extends Seeder
             [
                 'name' => 'Pro',
                 'slug' => PlanSlug::Pro->value,
-                'stripe_price_id' => 'price_1TTGRnF0HPxuwMFJ0vR15Jip',
                 'price' => 29,
                 'features' => [
                     'Unlimited clients',
@@ -42,7 +45,6 @@ class PlanSeeder extends Seeder
             [
                 'name' => 'Business',
                 'slug' => PlanSlug::Business->value,
-                'stripe_price_id' => 'price_1TTGS6F0HPxuwMFJNYAoAwYP',
                 'price' => 79,
                 'features' => [
                     'Everything in Pro',
@@ -56,6 +58,14 @@ class PlanSeeder extends Seeder
         ];
 
         foreach ($plans as $plan) {
+            $stripePriceId = $stripePriceIds[$plan['slug']] ?? null;
+
+            if ($plan['slug'] === PlanSlug::Free->value) {
+                $plan['stripe_price_id'] = null;
+            } elseif (is_string($stripePriceId) && $stripePriceId !== '') {
+                $plan['stripe_price_id'] = $stripePriceId;
+            }
+
             Plan::updateOrCreate(['slug' => $plan['slug']], $plan);
         }
     }
