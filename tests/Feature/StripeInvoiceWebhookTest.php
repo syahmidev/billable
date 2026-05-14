@@ -63,7 +63,7 @@ class StripeInvoiceWebhookTest extends TestCase
 
     public function test_it_rejects_invalid_stripe_webhook_signatures(): void
     {
-        config(['cashier.webhook.secret' => self::WEBHOOK_SECRET]);
+        config(['billing.stripe_webhooks.invoice_secret' => self::WEBHOOK_SECRET]);
 
         $payload = $this->stripePayload('evt_bad_signature', 'charge.succeeded', [
             'id' => 'ch_test',
@@ -92,7 +92,7 @@ class StripeInvoiceWebhookTest extends TestCase
 
     private function postSignedWebhook(string $payload): TestResponse
     {
-        config(['cashier.webhook.secret' => self::WEBHOOK_SECRET]);
+        config(['billing.stripe_webhooks.invoice_secret' => self::WEBHOOK_SECRET]);
 
         $timestamp = time();
         $signature = hash_hmac('sha256', "{$timestamp}.{$payload}", self::WEBHOOK_SECRET);

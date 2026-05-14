@@ -16,7 +16,7 @@ class EnsureTenantMember
             return redirect()->route('login');
         }
 
-        if (! auth()->user()->belongsToTenant(tenant('id'))) {
+        if (! auth()->user()->belongsToTenant((string) tenant('id'))) {
             abort(403, 'You do not have access to this workspace.');
         }
 

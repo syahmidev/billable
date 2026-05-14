@@ -12,31 +12,31 @@ class ClientPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->belongsToTenant(tenant('id'))
+        return $user->belongsToTenant((string) tenant('id'))
             && $user->hasTenantPermission(Permission::ClientsView);
     }
 
     public function view(User $user, Client $client): bool
     {
-        return $user->belongsToTenant(tenant('id'))
+        return $user->belongsToTenant((string) tenant('id'))
             && $user->hasTenantPermission(Permission::ClientsView);
     }
 
     public function create(User $user): bool
     {
-        return $user->belongsToTenant(tenant('id'))
+        return $user->belongsToTenant((string) tenant('id'))
             && $user->hasTenantPermission(Permission::ClientsCreate);
     }
 
     public function update(User $user, Client $client): bool
     {
-        return $user->belongsToTenant(tenant('id'))
+        return $user->belongsToTenant((string) tenant('id'))
             && $user->hasTenantPermission(Permission::ClientsUpdate);
     }
 
     public function delete(User $user, Client $client): bool
     {
-        return $user->belongsToTenant(tenant('id'))
+        return $user->belongsToTenant((string) tenant('id'))
             && $user->hasTenantPermission(Permission::ClientsDelete);
     }
 }

@@ -110,7 +110,7 @@ class InvoiceController extends Controller
     public function send(Request $request, Invoice $invoice, SendInvoice $action): RedirectResponse
     {
         $this->authorize('send', $invoice);
-        $action->handle($invoice, tenant('name'), $request->user());
+        $action->handle($invoice, (string) tenant('name'), $request->user());
 
         $message = $invoice->client->email
             ? 'Invoice email queued for '.$invoice->client->email
@@ -122,7 +122,7 @@ class InvoiceController extends Controller
     public function remind(Request $request, Invoice $invoice, SendInvoiceReminder $action): RedirectResponse
     {
         $this->authorize('remind', $invoice);
-        $action->handle($invoice, tenant('name'), $request->user());
+        $action->handle($invoice, (string) tenant('name'), $request->user());
 
         return redirect()
             ->route('tenant.invoices.show', $invoice)

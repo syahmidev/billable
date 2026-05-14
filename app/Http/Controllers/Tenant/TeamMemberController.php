@@ -73,6 +73,6 @@ class TeamMemberController extends Controller
 
     private function ensureTenantMember(User $member): void
     {
-        abort_unless($member->tenant_id === tenant('id'), 404);
+        abort_unless($member->tenant_id === (string) tenant('id'), 404);
     }
 }
