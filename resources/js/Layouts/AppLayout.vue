@@ -1,6 +1,6 @@
 <script setup>
     import { computed, ref } from 'vue'
-    import { Head, usePage, router } from '@inertiajs/vue3'
+    import { Head, usePage, router, Link } from '@inertiajs/vue3'
 
     const page = usePage()
     const user = page.props.auth.user
@@ -17,7 +17,6 @@
         if (page.url.startsWith('/clients')) return 'Clients'
         if (page.url.startsWith('/invoices/create')) return 'New Invoice'
         if (page.url.startsWith('/invoices')) return 'Invoices'
-
         return 'Dashboard'
     })
 
@@ -72,6 +71,10 @@
     const visibleNavItems = computed(() =>
         navItems.filter((item) => item.canShow?.() ?? true)
     )
+
+    const userInitial = computed(() =>
+        user?.name?.charAt(0).toUpperCase() ?? '?'
+    )
 </script>
 
 <template>
@@ -79,7 +82,8 @@
         <meta name="robots" content="noindex, nofollow" />
     </Head>
 
-    <div class="min-h-screen bg-gray-950">
+    <div class="min-h-screen" style="background: linear-gradient(160deg, #EDE9FF 0%, #F0F4FF 50%, #E8F5F0 100%);">
+
         <!-- Mobile overlay -->
         <Transition
             enter-active-class="transition-opacity duration-200"
@@ -91,140 +95,119 @@
         >
             <div
                 v-if="sidebarOpen"
-                class="fixed inset-0 z-20 bg-black/60 md:hidden"
+                class="fixed inset-0 z-20 bg-indigo-950/30 backdrop-blur-sm md:hidden"
                 @click="sidebarOpen = false"
             />
         </Transition>
 
         <div class="flex min-h-screen">
             <!-- Sidebar -->
-            <Transition
-                enter-active-class="transition-transform duration-200"
-                enter-from-class="-translate-x-full"
-                enter-to-class="translate-x-0"
-                leave-active-class="transition-transform duration-200"
-                leave-from-class="translate-x-0"
-                leave-to-class="-translate-x-full"
+            <aside
+                :class="[
+                    'fixed inset-y-0 left-0 z-30 flex w-56 flex-col border-r-2 border-indigo-100 bg-white/80 backdrop-blur-sm',
+                    'md:relative md:translate-x-0 transition-transform duration-200',
+                    sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+                ]"
+                style="box-shadow: 4px 0 24px rgba(99,102,241,0.06);"
             >
-                <aside
-                    v-show="sidebarOpen || true"
-                    :class="[
-                        'fixed inset-y-0 left-0 z-30 flex w-60 flex-col bg-gray-900 border-r border-white/10',
-                        'md:relative md:translate-x-0',
-                        sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-                    ]"
-                >
-                    <div
-                        class="flex items-center justify-between border-b border-white/10 px-6 py-5"
+                <!-- Brand -->
+                <div class="flex items-center justify-between px-5 py-5">
+                    <div class="min-w-0">
+                        <span
+                            class="text-xl font-bold text-indigo-900"
+                            style="font-family: 'Fredoka', sans-serif; letter-spacing: -0.01em;"
+                        >
+                            bill<span class="text-indigo-500">able</span>
+                        </span>
+                        <p class="mt-0.5 truncate text-[11px] font-medium text-indigo-300">
+                            {{ workspace?.name }}
+                        </p>
+                    </div>
+                    <button
+                        class="cursor-pointer rounded-xl p-1 text-indigo-300 transition-colors hover:text-indigo-600 md:hidden"
+                        aria-label="Close sidebar"
+                        @click="sidebarOpen = false"
                     >
-                        <div>
-                            <span class="text-lg font-bold tracking-tight text-white">
-                                bill<span class="text-violet-500">able</span>
-                            </span>
-                            <p class="mt-0.5 truncate text-xs text-gray-500">
-                                {{ workspace?.name }}
-                            </p>
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Nav items -->
+                <nav class="flex-1 space-y-0.5 px-3 pb-4" aria-label="Main navigation">
+                    <Link
+                        v-for="item in visibleNavItems"
+                        :key="item.href"
+                        :href="item.href"
+                        :class="[
+                            'group flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-all duration-150',
+                            item.active()
+                                ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-200'
+                                : 'text-indigo-400 hover:bg-indigo-50 hover:text-indigo-700',
+                        ]"
+                        @click="sidebarOpen = false"
+                    >
+                        <svg
+                            class="h-4 w-4 shrink-0"
+                            :class="item.active() ? 'text-white' : 'text-indigo-300 group-hover:text-indigo-500'"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" :d="item.icon" />
+                        </svg>
+                        {{ item.label }}
+                    </Link>
+                </nav>
+
+                <!-- User section -->
+                <div class="border-t-2 border-indigo-50 p-3">
+                    <div class="flex items-center gap-3 rounded-2xl bg-indigo-50 px-3 py-2.5">
+                        <div
+                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-500 text-xs font-black text-white"
+                            style="box-shadow: 0 4px 10px rgba(99,102,241,0.30);"
+                        >
+                            {{ userInitial }}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-[13px] font-bold text-indigo-900">{{ user?.name }}</p>
+                            <p class="truncate text-[11px] font-medium text-indigo-400">{{ user?.email }}</p>
                         </div>
                         <button
-                            class="text-gray-500 hover:text-white md:hidden"
-                            @click="sidebarOpen = false"
+                            class="cursor-pointer rounded-xl p-1.5 text-indigo-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                            aria-label="Sign out"
+                            @click="logout"
                         >
-                            <svg
-                                class="h-5 w-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                         </button>
                     </div>
-
-                    <nav class="flex-1 space-y-1 px-3 py-4">
-                        <a
-                            v-for="item in visibleNavItems"
-                            :key="item.href"
-                            :href="item.href"
-                            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
-                            :class="{ 'bg-violet-500/10 text-violet-400': item.active() }"
-                            @click="sidebarOpen = false"
-                        >
-                            <svg
-                                class="h-4 w-4 shrink-0"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    :d="item.icon"
-                                />
-                            </svg>
-                            {{ item.label }}
-                        </a>
-                    </nav>
-
-                    <div class="border-t border-white/10 px-3 py-4">
-                        <div class="flex items-center gap-3 px-3 py-2">
-                            <div
-                                class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500/20 text-xs font-semibold text-violet-400"
-                            >
-                                {{ user?.name?.charAt(0).toUpperCase() }}
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="truncate text-xs font-medium text-white">
-                                    {{ user?.name }}
-                                </p>
-                                <p class="truncate text-xs text-gray-500">{{ user?.email }}</p>
-                            </div>
-                            <button
-                                class="text-gray-500 transition-colors hover:text-white"
-                                @click="logout"
-                            >
-                                <svg
-                                    class="h-4 w-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </aside>
-            </Transition>
+                </div>
+            </aside>
 
             <!-- Content area -->
             <div class="flex min-w-0 flex-1 flex-col">
                 <!-- Mobile top bar -->
                 <div
-                    class="flex items-center gap-4 border-b border-white/10 bg-gray-900 px-4 py-3 md:hidden"
+                    class="flex items-center gap-4 border-b-2 border-indigo-100 bg-white/80 px-4 py-3.5 backdrop-blur-sm md:hidden"
+                    style="box-shadow: 0 2px 12px rgba(99,102,241,0.06);"
                 >
-                    <button class="text-gray-400 hover:text-white" @click="sidebarOpen = true">
+                    <button
+                        class="cursor-pointer rounded-xl p-1.5 text-indigo-400 transition-colors hover:text-indigo-700"
+                        aria-label="Open sidebar"
+                        @click="sidebarOpen = true"
+                    >
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 6h16M4 12h16M4 18h16"
-                            />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
-                    <span class="text-sm font-bold tracking-tight text-white">
-                        bill<span class="text-violet-500">able</span>
+                    <span
+                        class="text-lg font-bold text-indigo-900"
+                        style="font-family: 'Fredoka', sans-serif;"
+                    >
+                        bill<span class="text-indigo-500">able</span>
                     </span>
                 </div>
 

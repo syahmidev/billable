@@ -7,6 +7,115 @@
 @source '../**/*.vue';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Nunito', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Fredoka', 'Nunito', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ─── Claymorphism Utilities ────────────────────────────────────── */
+
+.clay-card {
+    border-radius: 24px;
+    border: 3px solid rgba(99, 102, 241, 0.10);
+    background: white;
+    box-shadow:
+        inset -2px -4px 8px rgba(255, 255, 255, 0.80),
+        inset 2px 2px 4px rgba(99, 102, 241, 0.04),
+        6px 10px 32px rgba(99, 102, 241, 0.10),
+        0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.clay-card-indigo {
+    border-color: rgba(99, 102, 241, 0.18);
+    box-shadow:
+        inset -2px -4px 8px rgba(255, 255, 255, 0.80),
+        6px 10px 32px rgba(99, 102, 241, 0.14),
+        0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.clay-card-emerald {
+    border-color: rgba(16, 185, 129, 0.18);
+    box-shadow:
+        inset -2px -4px 8px rgba(255, 255, 255, 0.80),
+        6px 10px 32px rgba(16, 185, 129, 0.12),
+        0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.clay-card-amber {
+    border-color: rgba(245, 158, 11, 0.18);
+    box-shadow:
+        inset -2px -4px 8px rgba(255, 255, 255, 0.80),
+        6px 10px 32px rgba(245, 158, 11, 0.12),
+        0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.clay-card-rose {
+    border-color: rgba(244, 63, 94, 0.18);
+    box-shadow:
+        inset -2px -4px 8px rgba(255, 255, 255, 0.80),
+        6px 10px 32px rgba(244, 63, 94, 0.12),
+        0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.clay-card-sky {
+    border-color: rgba(14, 165, 233, 0.18);
+    box-shadow:
+        inset -2px -4px 8px rgba(255, 255, 255, 0.80),
+        6px 10px 32px rgba(14, 165, 233, 0.12),
+        0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.clay-card-violet {
+    border-color: rgba(139, 92, 246, 0.18);
+    box-shadow:
+        inset -2px -4px 8px rgba(255, 255, 255, 0.80),
+        6px 10px 32px rgba(139, 92, 246, 0.14),
+        0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Clay button press effect */
+.clay-btn {
+    border-bottom: 4px solid rgba(0, 0, 0, 0.15);
+    transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms ease, border-bottom-width 100ms ease;
+}
+
+.clay-btn:hover {
+    transform: translateY(-2px);
+}
+
+.clay-btn:active {
+    transform: translateY(2px);
+    border-bottom-width: 1px;
+}
+
+.clay-btn-secondary {
+    border-bottom: 4px solid rgba(99, 102, 241, 0.20);
+    transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms ease, border-bottom-width 100ms ease;
+}
+
+.clay-btn-secondary:hover {
+    transform: translateY(-2px);
+}
+
+.clay-btn-secondary:active {
+    transform: translateY(2px);
+    border-bottom-width: 1px;
+}
+
+/* Reduced-motion overrides */
+@media (prefers-reduced-motion: reduce) {
+    .clay-btn,
+    .clay-btn-secondary {
+        transition: none;
+    }
+
+    .clay-btn:hover,
+    .clay-btn-secondary:hover {
+        transform: none;
+    }
+
+    .clay-btn:active,
+    .clay-btn-secondary:active {
+        transform: none;
+    }
 }
