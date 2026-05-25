@@ -1,6 +1,6 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { useForm } from '@inertiajs/vue3'
+import { Link, useForm } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 
 const props = defineProps({
@@ -52,84 +52,87 @@ function submit() {
 
 <template>
     <AppLayout>
-        <div class="p-8 max-w-4xl">
+        <div class="p-6 lg:p-8 max-w-4xl">
             <!-- Header -->
-            <div class="flex items-center gap-3 mb-8">
-                <a href="/invoices" class="text-gray-500 hover:text-white transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            <div class="mb-8 flex items-center gap-3">
+                <Link
+                    href="/invoices"
+                    class="cursor-pointer flex h-9 w-9 items-center justify-center rounded-2xl border-2 border-indigo-100 bg-white text-indigo-400 transition-all hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                    style="box-shadow: 0 2px 8px rgba(99,102,241,0.08);"
+                >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
                     </svg>
-                </a>
+                </Link>
                 <div>
-                    <h1 class="text-2xl font-semibold text-white">New Invoice</h1>
-                    <p class="text-sm text-gray-400 mt-0.5">Draft a new invoice for a client</p>
+                    <h1 class="text-3xl font-bold text-indigo-950" style="font-family: 'Fredoka', sans-serif; letter-spacing: -0.01em;">New Invoice</h1>
+                    <p class="mt-0.5 text-sm font-medium text-indigo-400">Draft a new invoice for a client</p>
                 </div>
             </div>
 
-            <div v-if="!hasClients" class="rounded-xl border border-violet-500/20 bg-violet-500/10 p-8 text-center">
-                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-violet-500/15">
-                    <svg class="h-6 w-6 text-violet-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            <!-- No clients warning -->
+            <div v-if="!hasClients" class="clay-card bg-white p-10 text-center">
+                <div
+                    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-indigo-100"
+                    style="box-shadow: 0 6px 20px rgba(99,102,241,0.15);"
+                >
+                    <svg class="h-7 w-7 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M18 9v3m0 0v3m0-3h3m-3 0h-3M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                 </div>
-                <h2 class="text-sm font-semibold text-white">Add a client first</h2>
-                <p class="mx-auto mt-2 max-w-md text-sm text-gray-400">
+                <p class="text-lg font-bold text-indigo-900" style="font-family: 'Fredoka', sans-serif;">Add a client first</p>
+                <p class="mt-1 text-sm font-medium text-indigo-400 max-w-sm mx-auto">
                     Invoices need a bill-to profile before line items and payment links can be created.
                 </p>
-                <a
+                <Link
                     href="/clients/create"
-                    class="mt-5 inline-flex items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-violet-500"
+                    class="clay-btn cursor-pointer mt-5 inline-flex items-center gap-2 rounded-2xl bg-indigo-500 px-5 py-2.5 text-sm font-black text-white"
+                    style="box-shadow: 0 8px 20px rgba(99,102,241,0.30), inset 0 1px 0 rgba(255,255,255,0.25);"
                 >
                     New client
-                </a>
+                </Link>
             </div>
 
             <form v-else @submit.prevent="submit" class="space-y-5">
-                <!-- Client + Dates -->
-                <div class="bg-gray-900 border border-white/10 rounded-xl p-6">
-                    <h2 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">Invoice Details</h2>
+                <!-- Invoice Details -->
+                <div class="clay-card bg-white p-6">
+                    <h2 class="mb-5 text-xs font-extrabold uppercase tracking-wider text-indigo-400">Invoice Details</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div class="sm:col-span-1">
-                            <label class="block text-xs font-medium text-gray-400 mb-1.5">Client <span class="text-red-400">*</span></label>
+                        <div>
+                            <label class="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-indigo-500">
+                                Client <span class="text-rose-400">*</span>
+                            </label>
                             <select
                                 v-model="form.client_id"
-                                class="w-full bg-gray-800 border rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500"
-                                :class="form.errors.client_id ? 'border-red-500' : 'border-white/10'"
+                                class="clay-select w-full"
+                                :class="{ 'clay-error': form.errors.client_id }"
                             >
                                 <option value="">Select a client</option>
                                 <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.name }}</option>
                             </select>
-                            <p v-if="form.errors.client_id" class="text-xs text-red-400 mt-1">{{ form.errors.client_id }}</p>
+                            <p v-if="form.errors.client_id" class="mt-1.5 text-xs font-semibold text-rose-500">{{ form.errors.client_id }}</p>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-400 mb-1.5">Issue Date</label>
-                            <input
-                                v-model="form.issue_date"
-                                type="date"
-                                class="w-full bg-gray-800 border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500"
-                            />
+                            <label class="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-indigo-500">Issue Date</label>
+                            <input v-model="form.issue_date" type="date" class="clay-input w-full" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-400 mb-1.5">Due Date</label>
-                            <input
-                                v-model="form.due_date"
-                                type="date"
-                                class="w-full bg-gray-800 border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500"
-                            />
+                            <label class="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-indigo-500">Due Date</label>
+                            <input v-model="form.due_date" type="date" class="clay-input w-full" />
                         </div>
                     </div>
                 </div>
 
                 <!-- Line Items -->
-                <div class="bg-gray-900 border border-white/10 rounded-xl p-6">
-                    <h2 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">Line Items</h2>
+                <div class="clay-card bg-white p-6">
+                    <h2 class="mb-5 text-xs font-extrabold uppercase tracking-wider text-indigo-400">Line Items</h2>
 
-                    <div class="space-y-2 mb-3">
-                        <!-- Header row -->
+                    <div class="space-y-3 mb-4">
+                        <!-- Column headers -->
                         <div class="grid grid-cols-12 gap-2 px-1">
-                            <div class="col-span-6 text-xs text-gray-600">Description</div>
-                            <div class="col-span-2 text-xs text-gray-600 text-right">Qty</div>
-                            <div class="col-span-3 text-xs text-gray-600 text-right">Unit Price</div>
+                            <div class="col-span-6 text-[10px] font-extrabold uppercase tracking-wider text-indigo-300">Description</div>
+                            <div class="col-span-2 text-[10px] font-extrabold uppercase tracking-wider text-indigo-300 text-right">Qty</div>
+                            <div class="col-span-3 text-[10px] font-extrabold uppercase tracking-wider text-indigo-300 text-right">Unit Price</div>
                             <div class="col-span-1"></div>
                         </div>
 
@@ -137,30 +140,30 @@ function submit() {
                             <input
                                 v-model="item.description"
                                 placeholder="Service description"
-                                class="col-span-6 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                                class="clay-input col-span-6"
                             />
                             <input
                                 v-model="item.quantity"
                                 type="number"
                                 min="0.01"
                                 step="0.01"
-                                class="col-span-2 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white text-right focus:outline-none focus:ring-1 focus:ring-violet-500"
+                                class="clay-input col-span-2 text-right"
                             />
                             <div class="col-span-3 relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-indigo-300 text-sm font-bold">$</span>
                                 <input
                                     v-model="item.unit_price"
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    class="w-full bg-gray-800 border border-white/10 rounded-lg pl-6 pr-3 py-2 text-sm text-white text-right focus:outline-none focus:ring-1 focus:ring-violet-500"
+                                    class="clay-input w-full pl-7 text-right"
                                 />
                             </div>
                             <button
                                 type="button"
                                 @click="removeItem(index)"
                                 :disabled="items.length === 1"
-                                class="col-span-1 flex justify-center text-gray-600 hover:text-red-400 disabled:opacity-20 transition-colors"
+                                class="cursor-pointer col-span-1 flex justify-center text-indigo-300 hover:text-rose-400 disabled:opacity-20 transition-colors"
                             >
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -172,74 +175,75 @@ function submit() {
                     <button
                         type="button"
                         @click="addItem"
-                        class="flex items-center gap-2 text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                        class="cursor-pointer flex items-center gap-1.5 text-xs font-bold text-indigo-500 hover:text-indigo-700 transition-colors"
                     >
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                         </svg>
                         Add line item
                     </button>
                 </div>
 
-                <!-- Totals + Discount/Tax -->
-                <div class="bg-gray-900 border border-white/10 rounded-xl p-6">
-                    <div class="flex gap-8">
+                <!-- Discount / Tax + Live Totals -->
+                <div class="clay-card bg-white p-6">
+                    <h2 class="mb-5 text-xs font-extrabold uppercase tracking-wider text-indigo-400">Adjustments & Totals</h2>
+                    <div class="flex flex-col sm:flex-row gap-6">
                         <!-- Discount + Tax inputs -->
                         <div class="flex-1 grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-medium text-gray-400 mb-1.5">Discount %</label>
+                                <label class="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-indigo-500">Discount %</label>
                                 <input
                                     v-model="form.discount_percent"
                                     type="number"
                                     min="0"
                                     max="100"
                                     step="0.01"
-                                    class="w-full bg-gray-800 border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500"
+                                    class="clay-input w-full"
                                 />
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-gray-400 mb-1.5">Tax %</label>
+                                <label class="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-indigo-500">Tax %</label>
                                 <input
                                     v-model="form.tax_percent"
                                     type="number"
                                     min="0"
                                     max="100"
                                     step="0.01"
-                                    class="w-full bg-gray-800 border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500"
+                                    class="clay-input w-full"
                                 />
                             </div>
                         </div>
 
                         <!-- Live totals -->
-                        <div class="w-56 space-y-2 text-sm">
-                            <div class="flex justify-between text-gray-400">
-                                <span>Subtotal</span>
-                                <span>${{ fmt(subtotal) }}</span>
+                        <div class="sm:w-56 rounded-2xl bg-indigo-50/60 border-2 border-indigo-100 p-4 space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="font-medium text-indigo-400">Subtotal</span>
+                                <span class="font-bold text-indigo-700">${{ fmt(subtotal) }}</span>
                             </div>
-                            <div v-if="form.discount_percent > 0" class="flex justify-between text-gray-400">
-                                <span>Discount ({{ form.discount_percent }}%)</span>
-                                <span class="text-red-400">-${{ fmt(discountAmount) }}</span>
+                            <div v-if="form.discount_percent > 0" class="flex justify-between text-sm">
+                                <span class="font-medium text-indigo-400">Discount ({{ form.discount_percent }}%)</span>
+                                <span class="font-bold text-rose-500">-${{ fmt(discountAmount) }}</span>
                             </div>
-                            <div v-if="form.tax_percent > 0" class="flex justify-between text-gray-400">
-                                <span>Tax ({{ form.tax_percent }}%)</span>
-                                <span>${{ fmt(taxAmount) }}</span>
+                            <div v-if="form.tax_percent > 0" class="flex justify-between text-sm">
+                                <span class="font-medium text-indigo-400">Tax ({{ form.tax_percent }}%)</span>
+                                <span class="font-bold text-indigo-700">${{ fmt(taxAmount) }}</span>
                             </div>
-                            <div class="flex justify-between font-semibold text-white pt-2 border-t border-white/10">
-                                <span>Total</span>
-                                <span class="text-violet-400">${{ fmt(total) }}</span>
+                            <div class="flex justify-between pt-2 border-t-2 border-indigo-100">
+                                <span class="text-sm font-extrabold text-indigo-900">Total</span>
+                                <span class="text-base font-black text-indigo-600" style="font-family: 'Fredoka', sans-serif;">${{ fmt(total) }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Notes -->
-                <div class="bg-gray-900 border border-white/10 rounded-xl p-6">
-                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Notes</label>
+                <div class="clay-card bg-white p-6">
+                    <label class="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-indigo-500">Notes</label>
                     <textarea
                         v-model="form.notes"
                         rows="3"
-                        placeholder="Payment terms, additional instructions, or thank you note..."
-                        class="w-full bg-gray-800 border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none"
+                        placeholder="Payment terms, additional instructions, or thank you note…"
+                        class="clay-textarea w-full"
                     />
                 </div>
 
@@ -248,11 +252,18 @@ function submit() {
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="px-5 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                        class="clay-btn cursor-pointer inline-flex items-center gap-2 rounded-2xl bg-indigo-500 px-6 py-3 text-sm font-black text-white disabled:opacity-60"
+                        style="box-shadow: 0 8px 20px rgba(99,102,241,0.30), inset 0 1px 0 rgba(255,255,255,0.25);"
                     >
-                        {{ form.processing ? 'Saving...' : 'Create Invoice' }}
+                        <svg v-if="form.processing" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        {{ form.processing ? 'Saving…' : 'Create Invoice' }}
                     </button>
-                    <a href="/invoices" class="px-5 py-2.5 text-sm text-gray-400 hover:text-white transition-colors">Cancel</a>
+                    <Link href="/invoices" class="cursor-pointer px-4 py-3 text-sm font-bold text-indigo-400 transition-colors hover:text-indigo-700">
+                        Cancel
+                    </Link>
                 </div>
             </form>
         </div>

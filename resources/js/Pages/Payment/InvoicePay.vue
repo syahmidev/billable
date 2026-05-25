@@ -46,14 +46,15 @@ onMounted(async () => {
     elements.value = stripe.value.elements({
         clientSecret,
         appearance: {
-            theme: 'night',
+            theme: 'stripe',
             variables: {
-                colorPrimary: '#7c3aed',
-                colorBackground: '#111827',
-                colorText: '#f9fafb',
-                colorDanger: '#ef4444',
-                borderRadius: '8px',
-                fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+                colorPrimary: '#6366F1',
+                colorBackground: '#ffffff',
+                colorText: '#1e1b4b',
+                colorDanger: '#f43f5e',
+                borderRadius: '16px',
+                fontFamily: 'Nunito, ui-sans-serif, system-ui, sans-serif',
+                fontSizeBase: '14px',
             },
         },
     })
@@ -86,75 +87,81 @@ async function pay() {
 
 <template>
     <PaymentLayout :title="`Pay ${invoice.invoice_number}`">
-        <!-- Invoice summary -->
-        <div class="bg-gray-900 border border-white/10 rounded-xl p-6 mb-5">
-            <div class="flex items-start justify-between mb-4">
+        <!-- Invoice summary card -->
+        <div class="clay-card bg-white p-6 mb-5">
+            <div class="flex items-start justify-between mb-5">
                 <div>
-                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Invoice from</p>
-                    <p class="text-base font-semibold text-white">{{ workspaceName }}</p>
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300 mb-1">Invoice from</p>
+                    <p class="text-base font-bold text-indigo-900" style="font-family: 'Fredoka', sans-serif;">{{ workspaceName }}</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Amount due</p>
-                    <p class="text-2xl font-bold text-white">${{ invoice.total.toFixed(2) }}</p>
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300 mb-1">Amount due</p>
+                    <p class="text-2xl font-black text-indigo-600" style="font-family: 'Fredoka', sans-serif;">${{ invoice.total.toFixed(2) }}</p>
                 </div>
             </div>
 
-            <div class="border-t border-white/10 pt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <div class="border-t-2 border-indigo-50 pt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
-                    <p class="text-gray-600 mb-0.5">Invoice #</p>
-                    <p class="text-gray-300 font-medium">{{ invoice.invoice_number }}</p>
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300 mb-1">Invoice #</p>
+                    <p class="text-sm font-bold text-indigo-700">{{ invoice.invoice_number }}</p>
                 </div>
                 <div>
-                    <p class="text-gray-600 mb-0.5">Bill to</p>
-                    <p class="text-gray-300 font-medium">{{ invoice.client.name }}</p>
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300 mb-1">Bill to</p>
+                    <p class="text-sm font-bold text-indigo-700">{{ invoice.client.name }}</p>
                 </div>
                 <div>
-                    <p class="text-gray-600 mb-0.5">Issue date</p>
-                    <p class="text-gray-300">{{ invoice.issue_date }}</p>
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300 mb-1">Issue date</p>
+                    <p class="text-sm font-medium text-indigo-500">{{ invoice.issue_date }}</p>
                 </div>
                 <div>
-                    <p class="text-gray-600 mb-0.5">Due date</p>
-                    <p class="text-gray-300">{{ invoice.due_date }}</p>
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300 mb-1">Due date</p>
+                    <p class="text-sm font-medium text-indigo-500">{{ invoice.due_date }}</p>
                 </div>
             </div>
 
-            <!-- Line items (collapsed summary) -->
-            <div class="border-t border-white/10 mt-4 pt-4 space-y-1.5">
-                <div v-for="item in invoice.items" :key="item.description" class="flex justify-between text-xs">
-                    <span class="text-gray-400">{{ item.description }} × {{ item.quantity }}</span>
-                    <span class="text-gray-300">${{ item.line_total.toFixed(2) }}</span>
+            <!-- Line items -->
+            <div class="border-t-2 border-indigo-50 mt-4 pt-4 space-y-2">
+                <div v-for="item in invoice.items" :key="item.description" class="flex justify-between text-sm">
+                    <span class="font-medium text-indigo-400">{{ item.description }} × {{ item.quantity }}</span>
+                    <span class="font-bold text-indigo-700">${{ item.line_total.toFixed(2) }}</span>
                 </div>
             </div>
         </div>
 
-        <!-- Already paid state -->
-        <div v-if="success" class="bg-green-500/10 border border-green-500/20 rounded-xl p-8 text-center">
-            <div class="w-14 h-14 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
-                <svg class="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        <!-- Already paid -->
+        <div v-if="success" class="clay-card-emerald bg-white p-10 text-center">
+            <div
+                class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-100"
+                style="box-shadow: 0 6px 20px rgba(16,185,129,0.20);"
+            >
+                <svg class="h-8 w-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                 </svg>
             </div>
-            <h2 class="text-lg font-semibold text-white mb-2">Payment Complete!</h2>
-            <p class="text-sm text-gray-400">
+            <h2 class="text-2xl font-bold text-emerald-800 mb-2" style="font-family: 'Fredoka', sans-serif;">Payment Complete!</h2>
+            <p class="text-sm font-medium text-emerald-600">
                 {{ alreadyPaid ? 'This invoice has already been paid.' : 'Your payment was successful. A receipt has been sent to your email.' }}
             </p>
         </div>
 
         <!-- Payment form -->
-        <div v-else class="bg-gray-900 border border-white/10 rounded-xl p-6">
-            <h2 class="text-sm font-semibold text-white mb-5">Payment Details</h2>
+        <div v-else class="clay-card bg-white p-6">
+            <h2 class="text-xs font-extrabold uppercase tracking-wider text-indigo-400 mb-5">Payment Details</h2>
 
-            <!-- Loading state -->
+            <!-- Loading -->
             <div v-if="loading" class="flex items-center justify-center py-10">
-                <div class="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+                <div class="h-8 w-8 rounded-full border-4 border-indigo-200 border-t-indigo-500 animate-spin"></div>
             </div>
 
-            <!-- Error state -->
-            <div v-if="errorMsg" class="mb-4 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
-                {{ errorMsg }}
+            <!-- Error -->
+            <div v-if="errorMsg" class="mb-4 flex items-center gap-2.5 rounded-2xl border-2 border-rose-200 bg-rose-50 px-4 py-3">
+                <svg class="h-4 w-4 shrink-0 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-sm font-semibold text-rose-700">{{ errorMsg }}</p>
             </div>
 
-            <!-- Stripe element -->
+            <!-- Stripe element mount point -->
             <div id="payment-element" class="mb-6"></div>
 
             <!-- Pay button -->
@@ -162,16 +169,17 @@ async function pay() {
                 v-if="!loading"
                 @click="pay"
                 :disabled="processing"
-                class="w-full py-3 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                class="clay-btn cursor-pointer w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-500 py-3.5 text-sm font-black text-white disabled:opacity-50"
+                style="box-shadow: 0 8px 20px rgba(99,102,241,0.30), inset 0 1px 0 rgba(255,255,255,0.25);"
             >
-                <svg v-if="processing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                <svg v-if="processing" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                {{ processing ? 'Processing...' : `Pay $${invoice.total.toFixed(2)}` }}
+                {{ processing ? 'Processing…' : `Pay $${invoice.total.toFixed(2)}` }}
             </button>
 
-            <p class="text-xs text-gray-600 text-center mt-3">
+            <p class="mt-3 text-center text-xs font-medium text-indigo-300">
                 Your payment is secured and encrypted by Stripe
             </p>
         </div>

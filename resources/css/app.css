@@ -102,7 +102,55 @@
     border-bottom-width: 1px;
 }
 
-/* Reduced-motion overrides */
+/* ─── Clay Form Utilities ───────────────────────────────────────── */
+
+.clay-input,
+.clay-select,
+.clay-textarea {
+    width: 100%;
+    border-radius: 16px;
+    border: 2px solid #E0E7FF;
+    background-color: rgba(238, 242, 255, 0.5);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1e1b4b;
+    transition: border-color 200ms, background-color 200ms, box-shadow 200ms;
+}
+
+.clay-input::placeholder,
+.clay-textarea::placeholder {
+    color: #a5b4fc;
+}
+
+.clay-input:focus,
+.clay-select:focus,
+.clay-textarea:focus {
+    border-color: #6366F1;
+    background-color: white;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.10);
+}
+
+.clay-input.clay-error,
+.clay-select.clay-error,
+.clay-textarea.clay-error {
+    border-color: #fca5a5;
+    background-color: #fff1f2;
+}
+
+.clay-input.clay-error:focus,
+.clay-select.clay-error:focus,
+.clay-textarea.clay-error:focus {
+    border-color: #f43f5e;
+    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.10);
+}
+
+.clay-textarea {
+    resize: none;
+}
+
+/* ─── Reduced-motion overrides */
 @media (prefers-reduced-motion: reduce) {
     .clay-btn,
     .clay-btn-secondary {

@@ -25,48 +25,59 @@ function submit() {
 
 <template>
     <AuthLayout title="Set Up Workspace">
-        <h1 class="text-xl font-semibold text-white mb-1">Set up your workspace</h1>
-        <p class="text-sm text-gray-400 mb-6">This is where your team will manage invoices</p>
+        <h1 class="text-2xl font-bold text-indigo-950 mb-1" style="font-family: 'Fredoka', sans-serif;">
+            Set up your workspace
+        </h1>
+        <p class="text-sm font-medium text-indigo-400 mb-7">This is where your team will manage invoices</p>
 
         <form @submit.prevent="submit" class="space-y-4">
             <div>
-                <label class="block text-xs font-medium text-gray-400 mb-1.5">Workspace name</label>
+                <label class="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-indigo-500">
+                    Workspace name
+                </label>
                 <input
                     v-model="form.workspace_name"
                     type="text"
                     placeholder="Acme Studio"
-                    class="w-full bg-gray-800 border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-violet-500 transition-colors"
+                    class="clay-input w-full"
+                    :class="{ 'clay-error': form.errors.workspace_name }"
                 />
-                <p v-if="form.errors.workspace_name" class="text-xs text-red-400 mt-1">{{ form.errors.workspace_name }}</p>
+                <p v-if="form.errors.workspace_name" class="mt-1.5 text-xs font-semibold text-rose-500">{{ form.errors.workspace_name }}</p>
             </div>
 
             <div>
-                <label class="block text-xs font-medium text-gray-400 mb-1.5">Subdomain</label>
-                <div class="flex items-center bg-gray-800 border border-white/10 rounded-lg focus-within:border-violet-500 transition-colors overflow-hidden">
+                <label class="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-indigo-500">
+                    Subdomain
+                </label>
+                <div
+                    class="flex items-center overflow-hidden rounded-2xl border-2 border-indigo-100 bg-indigo-50/50 focus-within:border-indigo-400 focus-within:bg-white transition-all"
+                    :class="{ 'border-rose-300 bg-rose-50': form.errors.subdomain }"
+                >
                     <input
                         v-model="form.subdomain"
                         type="text"
                         placeholder="acme"
-                        class="flex-1 bg-transparent px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none"
+                        class="flex-1 bg-transparent px-4 py-3 text-sm font-medium text-indigo-900 placeholder-indigo-300 focus:outline-none"
                     />
-                    <span class="px-3.5 py-2.5 text-sm text-gray-500 border-l border-white/10 bg-gray-900 select-none">
+                    <span class="shrink-0 border-l-2 border-indigo-100 bg-indigo-50 px-3 py-3 text-xs font-bold text-indigo-400 select-none">
                         .billable.test
                     </span>
                 </div>
-                <p v-if="form.errors.subdomain" class="text-xs text-red-400 mt-1">{{ form.errors.subdomain }}</p>
-                <p v-else class="text-xs text-gray-600 mt-1">Only lowercase letters, numbers and hyphens</p>
+                <p v-if="form.errors.subdomain" class="mt-1.5 text-xs font-semibold text-rose-500">{{ form.errors.subdomain }}</p>
+                <p v-else class="mt-1.5 text-xs font-medium text-indigo-300">Only lowercase letters, numbers and hyphens</p>
             </div>
 
             <button
                 type="submit"
                 :disabled="form.processing || !form.workspace_name || !form.subdomain"
-                class="relative w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg py-2.5 transition-colors flex items-center justify-center gap-2"
+                class="clay-btn cursor-pointer w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-500 py-3 text-sm font-black text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                style="box-shadow: 0 8px 20px rgba(99,102,241,0.30), inset 0 1px 0 rgba(255,255,255,0.25);"
             >
                 <svg v-if="form.processing" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                {{ form.processing ? 'Setting up your workspace...' : 'Create workspace →' }}
+                {{ form.processing ? 'Setting up your workspace…' : 'Create workspace →' }}
             </button>
         </form>
     </AuthLayout>
