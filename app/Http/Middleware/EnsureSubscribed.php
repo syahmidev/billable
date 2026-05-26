@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\AppUrl;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureSubscribed
@@ -22,10 +23,14 @@ class EnsureSubscribed
             return $next($request);
         }
 
-        $owner = User::query()
-            ->where('tenant_id', tenant('id'))
-            ->where('role', UserRole::Owner->value)
-            ->first();
+        $owner = Cache::remember(
+            'tenant_owner_'.tenant('id'),
+            now()->addMinutes(5),
+            fn (): ?User => User::query()
+                ->where('tenant_id', tenant('id'))
+                ->where('role', UserRole::Owner->value)
+                ->first()
+        );
 
         if ($owner && ($owner->plan === PlanSlug::Free->value || $owner->subscribed('default'))) {
             return $next($request);
