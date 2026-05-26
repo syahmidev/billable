@@ -35,15 +35,31 @@ class UpdateInvoice
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            $invoice->items()->delete();
+            // Delete items the user removed, preserving stable IDs for the rest.
+            $keepIds = collect($data['items'])->pluck('id')->filter()->values()->all();
+
+            if ($keepIds !== []) {
+                $invoice->items()->whereNotIn('id', $keepIds)->delete();
+            } else {
+                $invoice->items()->delete();
+            }
 
             foreach ($data['items'] as $item) {
-                $invoice->items()->create([
-                    'description' => $item['description'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'line_total' => InvoiceTotals::lineTotal($item),
-                ]);
+                if (! empty($item['id'])) {
+                    $invoice->items()->where('id', $item['id'])->update([
+                        'description' => $item['description'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'line_total' => InvoiceTotals::lineTotal($item),
+                    ]);
+                } else {
+                    $invoice->items()->create([
+                        'description' => $item['description'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'line_total' => InvoiceTotals::lineTotal($item),
+                    ]);
+                }
             }
 
             $invoice = $invoice->fresh('items');

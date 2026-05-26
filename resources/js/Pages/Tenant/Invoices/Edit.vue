@@ -19,13 +19,14 @@ const form = useForm({
 })
 
 const items = ref(props.invoice.items.map(i => ({
+    id: i.id ?? null,
     description: i.description,
     quantity: Number(i.quantity),
     unit_price: Number(i.unit_price),
 })))
 
 function addItem() {
-    items.value.push({ description: '', quantity: 1, unit_price: 0 })
+    items.value.push({ id: null, description: '', quantity: 1, unit_price: 0 })
 }
 
 function removeItem(index) {
@@ -43,6 +44,7 @@ function fmt(n) { return n.toFixed(2) }
 
 function submit() {
     form.items = items.value.map(i => ({
+        id: i.id ?? null,
         description: i.description,
         quantity: Number(i.quantity),
         unit_price: Number(i.unit_price),
