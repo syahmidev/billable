@@ -18,6 +18,10 @@ class InvoicePaymentController extends Controller
     {
         $invoice = Invoice::with('client', 'items')
             ->where('payment_token', $token)
+            ->whereIn('status', [
+                ...InvoiceStatus::payableValues(),
+                InvoiceStatus::Paid->value,
+            ])
             ->firstOrFail();
 
         return Inertia::render('Payment/InvoicePay', [
