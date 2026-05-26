@@ -44,6 +44,10 @@
                     <span class="meta-value">{{ $workspaceName }}</span>
                 </div>
                 <div class="meta-row">
+                    <span class="meta-label">Paid on</span>
+                    <span class="meta-value">{{ $invoice->paid_at?->format('M d, Y') ?? now()->format('M d, Y') }}</span>
+                </div>
+                <div class="meta-row">
                     <span class="meta-label">Status</span>
                     <span class="meta-value" style="color:#15803d; font-weight:600">Paid</span>
                 </div>

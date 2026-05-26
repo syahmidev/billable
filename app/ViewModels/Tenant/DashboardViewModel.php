@@ -49,8 +49,8 @@ class DashboardViewModel
             $chartData[] = [
                 'label' => $date->format('M'),
                 'revenue' => (float) Invoice::where('status', Invoice::STATUS_PAID)
-                    ->whereYear('updated_at', $date->year)
-                    ->whereMonth('updated_at', $date->month)
+                    ->whereYear('paid_at', $date->year)
+                    ->whereMonth('paid_at', $date->month)
                     ->sum('total'),
             ];
         }

@@ -22,6 +22,7 @@ class MarkInvoicePaid
 
         $invoice->forceFill([
             'status' => InvoiceStatus::Paid->value,
+            'paid_at' => now(),
             'stripe_payment_intent_id' => $invoice->stripe_payment_intent_id ?: $paymentIntentId,
         ])->save();
 
