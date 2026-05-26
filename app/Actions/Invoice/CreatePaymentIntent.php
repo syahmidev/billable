@@ -14,6 +14,16 @@ class CreatePaymentIntent
     {
         Stripe::setApiKey(config('cashier.secret'));
 
+        // Reuse existing PaymentIntent if one exists and is still active —
+        // prevents orphaned intents when a client clicks "Pay Now" more than once.
+        if ($invoice->stripe_payment_intent_id) {
+            $existing = PaymentIntent::retrieve($invoice->stripe_payment_intent_id);
+
+            if ($existing->status !== 'canceled') {
+                return $existing->client_secret;
+            }
+        }
+
         $intent = PaymentIntent::create([
             'amount' => (int) round((float) $invoice->total * 100),
             'currency' => strtolower((string) config('cashier.currency', 'usd')),
