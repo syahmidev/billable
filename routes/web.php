@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Billing\PlanController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\OnboardingController;
@@ -31,13 +32,22 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get('/onboarding', [OnboardingController::class, 'show'])->name('onboarding');
-    Route::post('/onboarding', [OnboardingController::class, 'store']);
 
-    Route::get('/plans', [PlanController::class, 'index'])->name('plans');
-    Route::post('/plans/{plan}/subscribe', [PlanController::class, 'subscribe'])->name('plans.subscribe');
-    Route::get('/billing/success', [PlanController::class, 'success'])->name('billing.success');
-    Route::get('/billing/portal', [PlanController::class, 'portal'])->name('billing.portal');
+    // Email verification — must be reachable before verified
+    Route::get('/email/verify', [VerificationController::class, 'showNotice'])->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->middleware('signed')->name('verification.verify');
+    Route::post('/email/verification-notification', [VerificationController::class, 'resend'])->middleware('throttle:6,1')->name('verification.send');
+
+    // Verified-only routes
+    Route::middleware('verified')->group(function (): void {
+        Route::get('/onboarding', [OnboardingController::class, 'show'])->name('onboarding');
+        Route::post('/onboarding', [OnboardingController::class, 'store']);
+
+        Route::get('/plans', [PlanController::class, 'index'])->name('plans');
+        Route::post('/plans/{plan}/subscribe', [PlanController::class, 'subscribe'])->name('plans.subscribe');
+        Route::get('/billing/success', [PlanController::class, 'success'])->name('billing.success');
+        Route::get('/billing/portal', [PlanController::class, 'portal'])->name('billing.portal');
+    });
 });
 
 Route::post('/stripe/webhook', [WebhookController::class, 'handleWebhook'])
