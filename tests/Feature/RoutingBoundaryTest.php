@@ -55,4 +55,21 @@ class RoutingBoundaryTest extends TestCase
         $this->assertContains('throttle:60,1', $paymentPageRoute->gatherMiddleware());
         $this->assertContains('throttle:10,1', $paymentIntentRoute->gatherMiddleware());
     }
+
+    public function test_pdf_download_route_is_throttled(): void
+    {
+        $route = Route::getRoutes()->getByName('tenant.invoices.pdf');
+
+        $this->assertNotNull($route);
+        $this->assertContains('throttle:20,1', $route->gatherMiddleware());
+    }
+
+    public function test_invoice_export_route_is_registered(): void
+    {
+        $route = Route::getRoutes()->getByName('tenant.invoices.export');
+
+        $this->assertNotNull($route);
+        $this->assertSame('invoices/export', $route->uri());
+        $this->assertContains('GET', $route->methods());
+    }
 }
