@@ -62,7 +62,7 @@ Route::middleware([
             ]);
             Route::post('invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('tenant.invoices.send');
             Route::post('invoices/{invoice}/remind', [InvoiceController::class, 'remind'])->name('tenant.invoices.remind');
-            Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('tenant.invoices.pdf');
+            Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->middleware('throttle:20,1')->name('tenant.invoices.pdf');
         });
     });
 });
