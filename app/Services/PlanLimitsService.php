@@ -63,16 +63,14 @@ class PlanLimitsService
 
     private function ownerPlan(): string
     {
-        $owner = Cache::remember(
+        return Cache::remember(
             'tenant_owner_plan_'.tenant('id'),
             now()->addMinutes(5),
-            fn (): ?User => User::query()
+            fn (): string => User::query()
                 ->where('tenant_id', tenant('id'))
                 ->where('role', UserRole::Owner->value)
                 ->oldest('id')
-                ->first()
+                ->value('plan') ?? PlanSlug::Free->value
         );
-
-        return $owner?->plan ?? PlanSlug::Free->value;
     }
 }

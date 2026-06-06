@@ -23,16 +23,20 @@ class EnsureSubscribed
             return $next($request);
         }
 
-        $owner = Cache::remember(
+        $ownerAllowed = Cache::remember(
             'tenant_owner_'.tenant('id'),
             now()->addMinutes(5),
-            fn (): ?User => User::query()
-                ->where('tenant_id', tenant('id'))
-                ->where('role', UserRole::Owner->value)
-                ->first()
+            function (): bool {
+                $owner = User::query()
+                    ->where('tenant_id', tenant('id'))
+                    ->where('role', UserRole::Owner->value)
+                    ->first();
+
+                return $owner && ($owner->plan === PlanSlug::Free->value || $owner->subscribed('default'));
+            }
         );
 
-        if ($owner && ($owner->plan === PlanSlug::Free->value || $owner->subscribed('default'))) {
+        if ($ownerAllowed) {
             return $next($request);
         }
 
