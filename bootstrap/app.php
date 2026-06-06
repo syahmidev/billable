@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\PlanLimitExceededException;
 use App\Http\Middleware\EnsureSubscribed;
 use App\Http\Middleware\EnsureTenantIsActive;
 use App\Http\Middleware\EnsureTenantMember;
@@ -32,5 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (PlanLimitExceededException $e) {
+            return back()->with('error', $e->getMessage());
+        });
     })->create();

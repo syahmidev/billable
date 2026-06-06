@@ -10,6 +10,7 @@ use App\Enums\InvoiceStatus;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Services\InvoiceNumberService;
+use App\Services\PlanLimitsService;
 use App\Support\InvoiceTotals;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -19,10 +20,13 @@ class CreateInvoice
     public function __construct(
         private readonly RecordActivity $activity,
         private readonly InvoiceNumberService $invoiceNumbers,
+        private readonly PlanLimitsService $planLimits,
     ) {}
 
     public function handle(array $data, ?User $actor = null): Invoice
     {
+        $this->planLimits->enforceInvoiceLimit();
+
         $totals = InvoiceTotals::fromItems(
             $data['items'],
             $data['discount_percent'] ?? 0,
