@@ -5,7 +5,10 @@
 
     const props = defineProps({
         plans: { type: Array, default: () => [] },
+        workspace_url: { type: String, default: null },
     })
+
+    const isLoggedIn = computed(() => !!page.props.auth.user)
 
     const page = usePage()
 
@@ -196,22 +199,36 @@
                     </Link>
 
                     <div class="flex items-center gap-2">
-                        <Link
-                            href="/login"
-                            class="cursor-pointer rounded-2xl px-4 py-2 text-sm font-semibold text-indigo-600 transition-colors hover:bg-indigo-50"
-                        >
-                            Sign in
-                        </Link>
-                        <Link
-                            :href="registerUrl()"
-                            class="clay-btn cursor-pointer inline-flex items-center gap-1.5 rounded-2xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white"
-                            style="box-shadow: 0 6px 20px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.25);"
-                        >
-                            Start free
-                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                            </svg>
-                        </Link>
+                        <template v-if="isLoggedIn">
+                            <a
+                                :href="workspace_url"
+                                class="clay-btn cursor-pointer inline-flex items-center gap-1.5 rounded-2xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white"
+                                style="box-shadow: 0 6px 20px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.25);"
+                            >
+                                Dashboard
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                </svg>
+                            </a>
+                        </template>
+                        <template v-else>
+                            <Link
+                                href="/login"
+                                class="cursor-pointer rounded-2xl px-4 py-2 text-sm font-semibold text-indigo-600 transition-colors hover:bg-indigo-50"
+                            >
+                                Sign in
+                            </Link>
+                            <Link
+                                :href="registerUrl()"
+                                class="clay-btn cursor-pointer inline-flex items-center gap-1.5 rounded-2xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white"
+                                style="box-shadow: 0 6px 20px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.25);"
+                            >
+                                Start free
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                </svg>
+                            </Link>
+                        </template>
                     </div>
                 </div>
             </div>
