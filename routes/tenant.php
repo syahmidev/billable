@@ -51,6 +51,7 @@ Route::middleware([
                 'destroy' => 'tenant.clients.destroy',
             ]);
 
+            Route::get('invoices/export', [InvoiceController::class, 'export'])->name('tenant.invoices.export');
             Route::resource('invoices', InvoiceController::class)->names([
                 'index' => 'tenant.invoices.index',
                 'create' => 'tenant.invoices.create',

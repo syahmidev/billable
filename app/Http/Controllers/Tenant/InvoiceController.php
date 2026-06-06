@@ -16,11 +16,13 @@ use App\Models\Invoice;
 use App\Queries\Tenant\InvoiceListingQuery;
 use App\Support\AppUrl;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InvoiceController extends Controller
 {
@@ -127,6 +129,51 @@ class InvoiceController extends Controller
         return redirect()
             ->route('tenant.invoices.show', $invoice)
             ->with('success', 'Reminder email queued for '.$invoice->client->email.'.');
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $this->authorize('viewAny', Invoice::class);
+
+        $invoices = Invoice::with('client')
+            ->when($request->input('status'), fn (Builder $q, string $s) => $q->where('status', $s))
+            ->when($request->input('client_id'), fn (Builder $q, string $id) => $q->where('client_id', $id))
+            ->when($request->input('from'), fn (Builder $q, string $d) => $q->whereDate('issue_date', '>=', $d))
+            ->when($request->input('to'), fn (Builder $q, string $d) => $q->whereDate('issue_date', '<=', $d))
+            ->latest()
+            ->cursor();
+
+        $filename = 'invoices-'.now()->format('Y-m-d').'.csv';
+
+        return response()->streamDownload(function () use ($invoices): void {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, [
+                'Invoice Number', 'Client', 'Client Email',
+                'Status', 'Issue Date', 'Due Date',
+                'Subtotal', 'Discount %', 'Tax %', 'Total',
+                'Sent At', 'Paid At',
+            ]);
+
+            foreach ($invoices as $invoice) {
+                fputcsv($handle, [
+                    $invoice->invoice_number,
+                    $invoice->client?->name ?? '',
+                    $invoice->client?->email ?? '',
+                    $invoice->status,
+                    $invoice->issue_date?->toDateString(),
+                    $invoice->due_date?->toDateString(),
+                    $invoice->subtotal,
+                    $invoice->discount_percent,
+                    $invoice->tax_percent,
+                    $invoice->total,
+                    $invoice->sent_at?->toDateTimeString(),
+                    $invoice->paid_at?->toDateTimeString(),
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
 
     public function pdf(Invoice $invoice): HttpResponse
