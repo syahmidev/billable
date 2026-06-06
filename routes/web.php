@@ -11,10 +11,10 @@ use App\Http\Controllers\LandingController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Seo\RobotsController;
 use App\Http\Controllers\Seo\SitemapController;
+use App\Http\Controllers\Stripe\CashierWebhookController;
 use App\Http\Controllers\Stripe\InvoiceWebhookController;
 use App\Http\Middleware\EnsureCashierWebhookSecretIsConfigured;
 use Illuminate\Support\Facades\Route;
-use Laravel\Cashier\Http\Controllers\WebhookController;
 
 Route::get('/robots.txt', RobotsController::class)->name('robots');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
@@ -50,7 +50,7 @@ Route::middleware('auth')->group(function (): void {
     });
 });
 
-Route::post('/stripe/webhook', [WebhookController::class, 'handleWebhook'])
+Route::post('/stripe/webhook', [CashierWebhookController::class, 'handleWebhook'])
     ->middleware(EnsureCashierWebhookSecretIsConfigured::class)
     ->name('cashier.webhook');
 
