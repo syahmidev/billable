@@ -13,6 +13,7 @@ class PlanSeeder extends Seeder
     public function run(): void
     {
         $stripePriceIds = [
+            PlanSlug::Free->value => config('billing.stripe_prices.free'),
             PlanSlug::Pro->value => config('billing.stripe_prices.pro'),
             PlanSlug::Business->value => config('billing.stripe_prices.business'),
         ];
@@ -60,9 +61,7 @@ class PlanSeeder extends Seeder
         foreach ($plans as $plan) {
             $stripePriceId = $stripePriceIds[$plan['slug']] ?? null;
 
-            if ($plan['slug'] === PlanSlug::Free->value) {
-                $plan['stripe_price_id'] = null;
-            } elseif (is_string($stripePriceId) && $stripePriceId !== '') {
+            if (is_string($stripePriceId) && $stripePriceId !== '') {
                 $plan['stripe_price_id'] = $stripePriceId;
             }
 

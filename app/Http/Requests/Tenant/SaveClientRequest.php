@@ -21,8 +21,8 @@ class SaveClientRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255', Rule::unique('clients', 'email')->ignore($this->route('client'))],
             'phone' => ['nullable', 'string', 'max:50'],
             'company' => ['nullable', 'string', 'max:255'],
-            'address' => ['nullable', 'string'],
-            'notes' => ['nullable', 'string'],
+            'address' => ['nullable', 'string', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

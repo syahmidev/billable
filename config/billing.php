@@ -8,6 +8,7 @@ return [
     ],
 
     'stripe_prices' => [
+        'free' => env('STRIPE_PRICE_FREE'),
         'pro' => env('STRIPE_PRICE_PRO'),
         'business' => env('STRIPE_PRICE_BUSINESS'),
     ],

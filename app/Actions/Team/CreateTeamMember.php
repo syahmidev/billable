@@ -25,7 +25,6 @@ class CreateTeamMember
             'password' => Hash::make($data['password']),
             'tenant_id' => $tenantId,
             'role' => $role->value,
-            'plan' => $actor->plan,
         ]);
         Role::findOrCreate($role->value);
         $member->assignRole($role->value);
