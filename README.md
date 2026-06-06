@@ -38,16 +38,22 @@ The CI workflow currently uses PHP 8.5. Local PHP only needs to satisfy Composer
 ## Current Feature Set
 
 - Central landing page with SEO metadata, `robots.txt`, and `sitemap.xml`.
-- Central registration, login, logout, and onboarding.
+- Central registration, login, logout, and onboarding with rate limiting on all auth routes.
+- Email verification with resend support — tenant and billing routes are gated behind the `verified` middleware.
+- Password reset flow with signed reset link and Inertia pages.
 - Workspace creation with reserved-subdomain validation.
 - Tenant database creation and tenant migration on workspace creation.
 - Free, Pro, and Business plans seeded into the central database.
+- Plan limits enforced in code — Free plan is capped at 3 clients and 5 invoices per month via `PlanLimitsService`.
 - Central and tenant subscription flows through Laravel Cashier and Stripe.
 - Tenant subscription gate that allows `/billing` recovery while protecting app routes.
+- Subscription cancellation webhook — `customer.subscription.deleted` resets the workspace owner's plan and clears subscription caches.
 - Tenant dashboard with revenue, outstanding, overdue, draft, client, recent invoice, and recent activity data.
 - Client CRUD with soft archive and invoice history.
-- Invoice CRUD with line items, discounts, tax, totals, PDF download, queued send action, and queued reminder action.
-- Public tenant invoice payment page at `/pay/{token}` with throttled Payment Intent creation.
+- Invoice CRUD with line items, discounts, tax, totals, PDF download (rate limited), queued send action, and queued reminder action.
+- Invoice CSV export at `/invoices/export` with optional `status`, `client_id`, `from`, and `to` query filters.
+- Auto-overdue job that transitions sent invoices past their due date to `overdue` daily at `00:01`.
+- Public tenant invoice payment page at `/pay/{token}` with throttled Payment Intent creation — draft, cancelled, and deleted invoices return 404.
 - Stripe `payment_intent.succeeded` webhook logging, idempotency checks, tenant resolution, and queued payment receipt email.
 - Workspace activity log for billing, clients, invoices, reminders, payments, and team changes.
 - Team member management with owner/member roles.
@@ -65,6 +71,7 @@ app/
 ├── Actions/
 ├── Concerns/
 ├── Enums/
+├── Exceptions/
 ├── Filament/
 ├── Http/
 │   ├── Controllers/
@@ -96,11 +103,14 @@ Controllers should stay thin. Business workflows should live in `app/Actions`, r
 Current examples:
 
 - `app/Actions/Tenant/CreateWorkspace.php` creates the tenant, stores the domain, and assigns owner access.
-- `app/Actions/Invoice/CreateInvoice.php` creates invoice headers, invoice items, totals, and activity.
+- `app/Actions/Invoice/CreateInvoice.php` creates invoice headers, invoice items, totals, and activity — enforces plan limits before creation.
 - `app/Actions/Invoice/MarkInvoicePaid.php` marks tenant invoices paid after Stripe confirms payment.
+- `app/Actions/Invoice/MarkOverdueInvoices.php` loops all tenants and transitions due sent invoices to overdue.
 - `app/Jobs/Invoice/*` sends invoice, reminder, and payment receipt emails from the queue.
 - `app/Queries/Tenant/*` contains tenant listing reads for clients, invoices, activity, team members, and billing owners.
 - `app/Services/InvoiceNumberService.php` issues tenant invoice numbers from a locked sequence row.
+- `app/Services/PlanLimitsService.php` reads the workspace owner's plan and enforces per-plan client and invoice limits.
+- `app/Exceptions/PlanLimitExceededException.php` is thrown when a plan limit is hit and handled globally to redirect back with an error message.
 - `app/ViewModels/Tenant/*` prepares page payloads for dashboard and billing overview screens.
 - `app/Support/AppUrl.php` builds central and tenant URLs from `APP_URL`.
 - `app/Support/InvoiceTotals.php` centralizes invoice subtotal, discount, tax, and total calculations.
@@ -113,16 +123,20 @@ Central routes are registered in `routes/web.php`:
 
 ```txt
 /                         Landing page
-/register                 Register
-/login                    Login
+/register                 Register (throttle: 10/min)
+/login                    Login (throttle: 5/min)
 /logout                   Logout
+/forgot-password          Password reset request (throttle: 5/min)
+/reset-password/{token}   Password reset form + submit (throttle: 5/min)
+/email/verify             Email verification notice
+/email/verify/{id}/{hash} Email verification link (signed)
 /onboarding               Workspace onboarding
 /plans                    Central plan selection
 /billing/success          Central subscription return
 /billing/portal           Central billing portal
 /robots.txt               Robots file
 /sitemap.xml              Sitemap
-/stripe/webhook           Cashier subscription webhook
+/stripe/webhook           Cashier subscription webhook (CashierWebhookController)
 /stripe/invoice-webhook   Custom invoice-payment webhook
 /admin                    Filament admin panel
 ```
@@ -136,13 +150,14 @@ Tenant routes are registered in `routes/tenant.php` and loaded by `App\Providers
 /billing/plans/{plan}/subscribe    Tenant plan checkout
 /clients                           Client CRUD
 /invoices                          Invoice CRUD
+/invoices/export                   CSV export (throttle: 10/min)
 /invoices/{invoice}/send           Send invoice email
 /invoices/{invoice}/remind         Send invoice reminder
-/invoices/{invoice}/pdf            Download invoice PDF
+/invoices/{invoice}/pdf            Download invoice PDF (throttle: 20/min)
 /team                              Team management
 /activity                          Activity log
-/pay/{token}                       Public invoice payment page
-/pay/{token}/intent                Public Payment Intent endpoint
+/pay/{token}                       Public invoice payment page (throttle: 60/min)
+/pay/{token}/intent                Public Payment Intent endpoint (throttle: 10/min)
 ```
 
 Tenant routes use:
@@ -153,6 +168,20 @@ Tenant routes use:
 - `subscribed` for protected product routes
 
 The public invoice payment routes are tenant routes, but they do not require login.
+
+---
+
+## Plan Limits
+
+Plan limits are enforced at creation time by `PlanLimitsService`, called from `CreateClient` and `CreateInvoice`.
+
+| Plan | Client limit | Invoice limit |
+| --- | --- | --- |
+| Free | 3 total | 5 per month |
+| Pro | Unlimited | Unlimited |
+| Business | Unlimited | Unlimited |
+
+When a limit is exceeded, `PlanLimitExceededException` is thrown and the global exception handler redirects back with a user-facing error message. Existing data is never deleted or hidden on downgrade — limits only gate new creation.
 
 ---
 
@@ -193,6 +222,8 @@ Server-side enforcement currently uses:
 - shared Inertia permission props for UI visibility
 
 Frontend gating uses shared Inertia `permissions` props from `HandleInertiaRequests`. Treat those props as UI visibility only; policies and server checks are the real enforcement layer.
+
+Team members do not inherit the owner's billing plan. Their `plan` column is always `null`. `EnsureSubscribed` checks the workspace owner's subscription when a member's own plan is null — this is the correct and intended path.
 
 ---
 
@@ -264,6 +295,8 @@ MAIL_FROM_ADDRESS=hello@billable.test
 ```
 
 Adjust PostgreSQL username and password for your machine. Normal local development should use the named `central` connection; do not switch the app to default SQLite unless you intentionally rework tenancy and test configuration.
+
+In production, set `SESSION_SECURE_COOKIE=true` and `APP_DEBUG=false`.
 
 ### 3. Create Databases
 
@@ -396,8 +429,18 @@ bun run build
 # Check PHP formatting without changing files
 ./vendor/bin/pint --test
 
-# Run the scheduled reminder command manually
+# Run the full test suite (requires billable_test PostgreSQL database)
+php artisan test
+
+# Mark all sent invoices past their due date as overdue (runs automatically at 00:01)
+php artisan invoices:mark-overdue
+
+# Send invoice reminders for due and overdue invoices (runs automatically at 09:00)
 php artisan invoices:send-reminders
+
+# Backfill missing payment tokens on invoices created before the payment_token column was added
+# Run once in production if any invoice has a NULL payment_token
+php artisan invoices:backfill-tokens
 
 # List all app routes
 php artisan route:list --except-vendor
@@ -407,9 +450,6 @@ php artisan route:list --path=plans --except-vendor
 
 # List tenant billing routes
 php artisan route:list --path=billing --except-vendor
-
-# Run the current test suite when you have a PostgreSQL test database ready
-php artisan test
 ```
 
 ---
@@ -425,6 +465,18 @@ CENTRAL_DB_DATABASE=billable_test
 ```
 
 So local tests need a PostgreSQL `billable_test` database unless the test configuration is changed.
+
+The test suite currently has 47 tests across unit and feature layers covering:
+
+- Invoice totals and status logic
+- Permission and subscription status enums
+- Landing page, SEO routes, and routing boundary assertions
+- Stripe invoice webhook idempotency and signature verification
+- Register plan intent preservation
+- Tenant isolation — cross-tenant client, invoice, and payment token access
+- Plan limit enforcement for Free plan client and invoice caps
+- Invoice CSV export including content verification and status filtering
+- Cashier subscription cancellation webhook plan reset and cache clearing
 
 GitHub Actions is configured in `.github/workflows/ci.yml` with a PostgreSQL 17 service that creates `billable_test`, then runs:
 
@@ -450,6 +502,7 @@ app/
 │   └── Tenant/
 ├── Concerns/
 ├── Enums/
+├── Exceptions/
 ├── Filament/
 │   ├── Resources/
 │   └── Widgets/
@@ -513,21 +566,21 @@ routes/
 - `App\Concerns\HasTenantAccess` resolves tenant membership, owner checks, permissions, and tenant URLs.
 - Workspace billing, team, and activity authorization is mapped through Gates in `App\Providers\AppServiceProvider`.
 - `CreateInvoice` and `UpdateInvoice` wrap multi-table invoice writes in database transactions.
+- `CreateClient` and `CreateInvoice` both call `PlanLimitsService` before writing — Free plan tenants are hard-stopped at 3 clients and 5 invoices/month. Pro and Business have no limits.
 - Tenant invoice numbers are issued from `invoice_number_sequences` with `lockForUpdate()` instead of `count() + 1`.
 - `App\Support\InvoiceTotals` centralizes invoice total math.
+- `App\Http\Controllers\Stripe\CashierWebhookController` extends Cashier's built-in `WebhookController`. It adds a `handleCustomerSubscriptionDeleted` override that resets `user.plan` to `null` and clears the `tenant_owner_plan_*` and `tenant_owner_*` cache keys when a subscription is cancelled via the Stripe billing portal.
+- `EnsureSubscribed` caches the workspace owner lookup per tenant for 5 minutes. Clear `tenant_owner_{id}` from cache if subscription state must propagate immediately.
+- `PlanLimitsService` caches the owner plan lookup per tenant for 5 minutes under `tenant_owner_plan_{id}`.
 - Paid plan Stripe Price IDs are configured through `config/billing.php` from `STRIPE_PRICE_PRO` and `STRIPE_PRICE_BUSINESS`.
 - The custom invoice Stripe webhook reads `STRIPE_INVOICE_WEBHOOK_SECRET`, falling back to `STRIPE_WEBHOOK_SECRET` when a separate invoice secret is not configured.
 - The Cashier subscription webhook is guarded by `EnsureCashierWebhookSecretIsConfigured` so a missing `STRIPE_WEBHOOK_SECRET` does not leave it unsigned.
 - SEO defaults live in `config/seo.php` and are shared with Inertia through `HandleInertiaRequests`.
-- `routes/console.php` registers `invoices:send-reminders` and schedules it daily at `09:00`.
-- Invoice emails, reminder emails, and receipt emails are queued through `app/Jobs/Invoice`.
+- `routes/console.php` registers and schedules `invoices:mark-overdue` (daily at `00:01`) and `invoices:send-reminders` (daily at `09:00`), both with `withoutOverlapping()`. A one-time `invoices:backfill-tokens` command is also registered for production data repair.
+- Invoice emails, reminder emails, and receipt emails are queued through `app/Jobs/Invoice` with `$tries = 3` and exponential backoff of `[30, 60, 120]` seconds.
 - Database queue jobs use `DB_QUEUE_CONNECTION`, which should stay on the central connection for tenant apps.
-
----
-
-## Remaining Improvement Backlog And Concerns
-
-The initial high-priority review backlog is now complete. Add new concerns here as the app grows or after the next focused review pass.
+- Auth routes (login, register, forgot/reset password) are rate limited. See `routes/web.php` for per-route throttle values.
+- Team members do not inherit the workspace owner's billing plan. The `plan` column on team member rows is always `null`. `EnsureSubscribed` falls through to the owner lookup when a member's own plan is null.
 
 ---
 
@@ -569,6 +622,18 @@ Add the tenant domain to `/etc/hosts` or configure your local DNS/Herd setup:
 
 ```txt
 127.0.0.1 acme-studio.billable.test
+```
+
+### A workspace owner cancels their subscription but team members still have access
+
+This should not happen with the current implementation. `customer.subscription.deleted` resets the owner's plan and clears subscription caches. If the issue persists, manually clear the `tenant_owner_{id}` and `tenant_owner_plan_{id}` cache keys and verify the Cashier webhook secret is correctly configured.
+
+### An invoice shows no payment URL
+
+The invoice was likely created before the `payment_token` column was added. Run the backfill command once to repair all affected rows:
+
+```bash
+php artisan invoices:backfill-tokens
 ```
 
 ---
