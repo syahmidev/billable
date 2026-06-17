@@ -55,8 +55,10 @@ jobs:
       - name: Check PHP formatting
         run: ./vendor/bin/pint --test
 
-      - name: Run PHP tests
-        run: php artisan test
-
+      # Build assets before tests: feature tests render pages that use the
+      # @vite directive, which needs public/build/manifest.json to exist.
       - name: Build frontend assets
         run: bun run build
+
+      - name: Run PHP tests
+        run: php artisan test
