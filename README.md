@@ -11,7 +11,6 @@
 ![Stripe](https://img.shields.io/badge/Stripe-Cashier-635BFF?logo=stripe&logoColor=white)
 ![Filament](https://img.shields.io/badge/Filament-5-F59E0B?logo=laravel&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-47%20passing-3FB950)
-![License](https://img.shields.io/badge/license-MIT-blue)
 
 ---
 
