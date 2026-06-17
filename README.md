@@ -19,7 +19,7 @@
 
 | Landing | Dashboard | Invoice |
 |---|---|---|
-| ![Landing](docs/screenshots/landing.png) | ![Dashboard](docs/screenshots/dashboard.png) | ![Widget](docs/screenshots/Invoice.png) |
+| ![Landing](docs/screenshots/landing.png) | ![Dashboard](docs/screenshots/dashboard.png) | ![Widget](docs/screenshots/invoice.png) |
 
 ---
 
