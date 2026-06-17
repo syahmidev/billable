@@ -1,15 +1,90 @@
 # Billable
 
-Billable is a multi-tenant SaaS invoicing platform for small teams. A user signs up on the central app, creates a workspace, chooses a billing plan, and then works from a dedicated tenant subdomain to manage clients, invoices, team members, payments, and billing activity.
+> A multi-tenant SaaS invoicing platform for small teams. Sign up on the central app, create a workspace, pick a plan, and manage clients, invoices,  > payments, team members, and billing from a dedicated tenant subdomain.
+
+![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-^8.3-777BB4?logo=php&logoColor=white)
+![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)
+![Inertia.js](https://img.shields.io/badge/Inertia.js-3-9553E9?logo=inertia&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-multi--tenant-4169E1?logo=postgresql&logoColor=white)
+![Stripe](https://img.shields.io/badge/Stripe-Cashier-635BFF?logo=stripe&logoColor=white)
+![Filament](https://img.shields.io/badge/Filament-5-F59E0B?logo=laravel&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-47%20passing-3FB950)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
+---
+
+## Preview
+
+| Landing | Dashboard | Invoice |
+|---|---|---|
+| ![Landing](docs/screenshots/landing.png) | ![Dashboard](docs/screenshots/dashboard.png) | ![Widget](docs/screenshots/Invoice.png) |
+
+---
+
+## About
+
+Billable is a domain-based multi-tenant SaaS. A user registers on the central app, creates a workspace, chooses a billing plan, and then works from a dedicated tenant subdomain.
 
 Example domains:
 
 - Central app: `https://billable.test`
 - Tenant app: `https://acme-studio.billable.test`
 
-The central domain owns public marketing pages, authentication, onboarding, plan selection, subscription webhooks, SEO files, and the Filament admin panel. Tenant domains own workspace features such as dashboard, billing, clients, invoices, team, activity, and public invoice payment links.
+The **central domain** owns public marketing pages, authentication, onboarding, plan selection, subscription webhooks, SEO files, and the Filament admin panel. **Tenant domains** own workspace features such as dashboard, billing, clients, invoices, team, activity, and public invoice payment links.
 
-Important: `https://billable.test/dashboard` should return `404`. `/dashboard` is a tenant route, so use the tenant domain, for example `https://acme-studio.billable.test/dashboard`.
+> Important: `https://billable.test/dashboard` returns `404`. `/dashboard` is a tenant route, so use the tenant domain, e.g. `https://acme-studio.billable.test/dashboard`.
+
+---
+
+## Features
+
+- Central landing page with SEO metadata, `robots.txt`, and `sitemap.xml`.
+- Central registration, login, logout, and onboarding with rate limiting on all auth routes.
+- Email verification with resend support — tenant and billing routes are gated behind the `verified` middleware.
+- Password reset flow with signed reset link and Inertia pages.
+- Workspace creation with reserved-subdomain validation, automatic tenant database creation, and tenant migration.
+- Free, Pro, and Business plans seeded into the central database, with central and tenant subscription flows through Laravel Cashier and Stripe.
+- Tenant subscription gate that allows `/billing` recovery while protecting app routes.
+- Subscription cancellation webhook — `customer.subscription.deleted` resets the workspace owner's plan and clears subscription caches.
+- Tenant dashboard with revenue, outstanding, overdue, draft, client, recent invoice, and recent activity data.
+- Client CRUD with soft archive and invoice history.
+- Invoice CRUD with line items, discounts, tax, totals, PDF download (rate limited), queued send action, and queued reminder action.
+- Invoice CSV export at `/invoices/export` with optional `status`, `client_id`, `from`, and `to` filters.
+- Auto-overdue job that transitions sent invoices past their due date to `overdue` daily at `00:01`.
+- Public tenant invoice payment page at `/pay/{token}` with throttled Payment Intent creation — draft, cancelled, and deleted invoices return 404.
+- Stripe `payment_intent.succeeded` webhook with logging, idempotency checks, tenant resolution, and a queued payment receipt email.
+- Workspace activity log for billing, clients, invoices, reminders, payments, and team changes.
+- Team member management with owner/member roles and permission-aware Inertia navigation.
+- Filament admin panel for workspaces, plans, subscription stats, MRR, and user counts.
+
+### Plan Limits
+
+Plan limits are enforced at creation time by `PlanLimitsService`, called from `CreateClient` and `CreateInvoice`.
+
+| Plan | Client limit | Invoice limit |
+| --- | --- | --- |
+| Free | 3 total | 5 per month |
+| Pro | Unlimited | Unlimited |
+| Business | Unlimited | Unlimited |
+
+When a limit is exceeded, `PlanLimitExceededException` is thrown and the global exception handler redirects back with a user-facing error message. Existing data is never deleted or hidden on downgrade — limits only gate new creation.
+
+### Roles and Permissions
+
+Roles and permissions are central-database records powered by `spatie/laravel-permission`.
+
+| Role | Access |
+| --- | --- |
+| `owner` | Receives every workspace permission. |
+| `member` | Can view activity and billing, create/update/view clients and invoices, send invoices, and send reminders. Cannot manage team, manage billing, or delete clients/invoices. |
+
+Permission groups: `activity.view`, `billing.view`, `billing.manage`, `clients.view`, `clients.create`, `clients.update`, `clients.delete`, `invoices.view`, `invoices.create`, `invoices.update`, `invoices.delete`, `invoices.send`, `invoices.remind`, `team.view`, `team.manage`.
+
+Server-side enforcement uses `ClientPolicy`, `InvoicePolicy`, and Gates for billing/team/activity abilities. Frontend gating uses shared Inertia `permissions` props from `HandleInertiaRequests` — treat those as UI visibility only; policies and server checks are the real enforcement layer.
+
+Team members do not inherit the owner's billing plan. Their `plan` column is always `null`; `EnsureSubscribed` checks the workspace owner's subscription when a member's own plan is null.
 
 ---
 
@@ -35,58 +110,9 @@ The CI workflow currently uses PHP 8.5. Local PHP only needs to satisfy Composer
 
 ---
 
-## Current Feature Set
+## System Flow
 
-- Central landing page with SEO metadata, `robots.txt`, and `sitemap.xml`.
-- Central registration, login, logout, and onboarding with rate limiting on all auth routes.
-- Email verification with resend support — tenant and billing routes are gated behind the `verified` middleware.
-- Password reset flow with signed reset link and Inertia pages.
-- Workspace creation with reserved-subdomain validation.
-- Tenant database creation and tenant migration on workspace creation.
-- Free, Pro, and Business plans seeded into the central database.
-- Plan limits enforced in code — Free plan is capped at 3 clients and 5 invoices per month via `PlanLimitsService`.
-- Central and tenant subscription flows through Laravel Cashier and Stripe.
-- Tenant subscription gate that allows `/billing` recovery while protecting app routes.
-- Subscription cancellation webhook — `customer.subscription.deleted` resets the workspace owner's plan and clears subscription caches.
-- Tenant dashboard with revenue, outstanding, overdue, draft, client, recent invoice, and recent activity data.
-- Client CRUD with soft archive and invoice history.
-- Invoice CRUD with line items, discounts, tax, totals, PDF download (rate limited), queued send action, and queued reminder action.
-- Invoice CSV export at `/invoices/export` with optional `status`, `client_id`, `from`, and `to` query filters.
-- Auto-overdue job that transitions sent invoices past their due date to `overdue` daily at `00:01`.
-- Public tenant invoice payment page at `/pay/{token}` with throttled Payment Intent creation — draft, cancelled, and deleted invoices return 404.
-- Stripe `payment_intent.succeeded` webhook logging, idempotency checks, tenant resolution, and queued payment receipt email.
-- Workspace activity log for billing, clients, invoices, reminders, payments, and team changes.
-- Team member management with owner/member roles.
-- Permission-aware Inertia navigation and action visibility.
-- Filament admin panel for workspaces, plans, subscription stats, MRR, and user counts.
-
----
-
-## Architecture
-
-This project follows a type-based Laravel structure. Do not create a `Domains` folder. Place classes by responsibility:
-
-```txt
-app/
-├── Actions/
-├── Concerns/
-├── Enums/
-├── Exceptions/
-├── Filament/
-├── Http/
-│   ├── Controllers/
-│   ├── Middleware/
-│   └── Requests/
-├── Jobs/
-├── Mail/
-├── Models/
-├── Policies/
-├── Providers/
-├── Queries/
-├── Services/
-├── Support/
-└── ViewModels/
-```
+This project follows a type-based Laravel structure (no `Domains` folder). Classes are placed by responsibility, and controllers stay thin.
 
 Preferred request flow:
 
@@ -98,28 +124,110 @@ Controller
 -> Inertia page / redirect / response
 ```
 
-Controllers should stay thin. Business workflows should live in `app/Actions`, reusable calculations in `app/Support` or `app/Services` when needed, reusable complex reads in `app/Queries`, and page preparation in `app/ViewModels` when controller data shaping gets too large.
+Business workflows live in `app/Actions`, reusable calculations in `app/Support` or `app/Services`, reusable complex reads in `app/Queries`, and page preparation in `app/ViewModels`.
 
-Current examples:
+Representative examples:
 
 - `app/Actions/Tenant/CreateWorkspace.php` creates the tenant, stores the domain, and assigns owner access.
-- `app/Actions/Invoice/CreateInvoice.php` creates invoice headers, invoice items, totals, and activity — enforces plan limits before creation.
+- `app/Actions/Invoice/CreateInvoice.php` creates invoice headers, items, totals, and activity — enforces plan limits before creation.
 - `app/Actions/Invoice/MarkInvoicePaid.php` marks tenant invoices paid after Stripe confirms payment.
 - `app/Actions/Invoice/MarkOverdueInvoices.php` loops all tenants and transitions due sent invoices to overdue.
 - `app/Jobs/Invoice/*` sends invoice, reminder, and payment receipt emails from the queue.
 - `app/Queries/Tenant/*` contains tenant listing reads for clients, invoices, activity, team members, and billing owners.
 - `app/Services/InvoiceNumberService.php` issues tenant invoice numbers from a locked sequence row.
-- `app/Services/PlanLimitsService.php` reads the workspace owner's plan and enforces per-plan client and invoice limits.
-- `app/Exceptions/PlanLimitExceededException.php` is thrown when a plan limit is hit and handled globally to redirect back with an error message.
-- `app/ViewModels/Tenant/*` prepares page payloads for dashboard and billing overview screens.
-- `app/Support/AppUrl.php` builds central and tenant URLs from `APP_URL`.
-- `app/Support/InvoiceTotals.php` centralizes invoice subtotal, discount, tax, and total calculations.
+- `app/Services/PlanLimitsService.php` reads the workspace owner's plan and enforces per-plan limits.
+- `app/Support/InvoiceTotals.php` centralizes subtotal, discount, tax, and total calculations.
+
+### Project Structure
+
+```txt
+app/
+├── Actions/        (Activity, Auth, Billing, Client, Invoice, Team, Tenant)
+├── Concerns/
+├── Enums/
+├── Exceptions/
+├── Filament/       (Resources, Widgets)
+├── Http/
+│   ├── Controllers/ (Auth, Billing, Payment, Seo, Stripe, Tenant)
+│   ├── Middleware/
+│   └── Requests/
+├── Jobs/Invoice/
+├── Mail/
+├── Models/
+├── Policies/
+├── Providers/
+├── Queries/Tenant/
+├── Services/
+├── Support/
+└── ViewModels/Tenant/
+
+database/
+├── migrations/
+├── migrations/tenant/
+└── seeders/
+
+resources/js/
+├── Components/
+├── Layouts/
+└── Pages/         (Auth, Billing, Onboarding, Payment, Tenant)
+
+routes/
+├── web.php        (central)
+├── tenant.php     (tenant, loaded by TenancyServiceProvider)
+└── console.php    (scheduled commands)
+```
+
+### Implementation Notes
+
+- `config/tenancy.php` defines `billable.test`, `localhost`, and `127.0.0.1` as central domains.
+- Tenant identification uses `InitializeTenancyByDomain` and `PreventAccessFromCentralDomains`. `tenant.active` blocks all tenant routes when a workspace is suspended.
+- `tenants.name` and `tenants.is_suspended` are real central database columns, not only values in Stancl's `data` JSON.
+- `Stancl\Tenancy\Features\ViteBundler::class` is enabled so tenant pages use normal Vite build assets (`/build/assets/...`).
+- `App\Support\AppUrl` builds central URLs, tenant domains, and tenant URLs from `APP_URL`.
+- `App\Concerns\HasTenantAccess` resolves tenant membership, owner checks, permissions, and tenant URLs.
+- `CreateInvoice` and `UpdateInvoice` wrap multi-table invoice writes in database transactions.
+- Tenant invoice numbers are issued from `invoice_number_sequences` with `lockForUpdate()` instead of `count() + 1`.
+- `CashierWebhookController` overrides `handleCustomerSubscriptionDeleted` to reset `user.plan` to `null` and clear the `tenant_owner_plan_*` and `tenant_owner_*` cache keys when a subscription is cancelled.
+- `EnsureSubscribed` caches the workspace owner lookup per tenant for 5 minutes (`tenant_owner_{id}`); `PlanLimitsService` caches the owner plan lookup per tenant for 5 minutes (`tenant_owner_plan_{id}`).
+- Paid plan Stripe Price IDs are configured through `config/billing.php` from `STRIPE_PRICE_PRO` and `STRIPE_PRICE_BUSINESS`.
+- The custom invoice webhook reads `STRIPE_INVOICE_WEBHOOK_SECRET`, falling back to `STRIPE_WEBHOOK_SECRET` when no separate secret is configured. Both webhooks fail closed when their signing secret is missing.
+- `routes/console.php` schedules `invoices:mark-overdue` (daily `00:01`) and `invoices:send-reminders` (daily `09:00`), both with `withoutOverlapping()`.
+- Invoice/reminder/receipt emails are queued via `app/Jobs/Invoice` with `$tries = 3` and exponential backoff of `[30, 60, 120]` seconds. Database queue jobs use `DB_QUEUE_CONNECTION`, which should stay on the central connection.
 
 ---
 
-## Routing Model
+## Database Overview
 
-Central routes are registered in `routes/web.php`:
+Billable uses one **central** PostgreSQL database plus one **tenant** PostgreSQL database per workspace (created automatically by Stancl Tenancy on workspace creation).
+
+### Central database
+
+| Table | Purpose |
+| --- | --- |
+| `users` | Accounts; holds `plan`, `tenant_id`, `is_admin`, and Cashier customer columns. |
+| `tenants` | Workspaces; includes `name`, `is_suspended`, and workspace status columns. |
+| `domains` | Maps tenant domains to workspaces. |
+| `plans` | Free / Pro / Business plans and their Stripe Price IDs. |
+| `subscriptions`, `subscription_items` | Laravel Cashier subscription state (with meter columns). |
+| `roles`, `permissions`, `model_has_*`, `role_has_permissions` | Spatie roles and permissions. |
+| `stripe_events` | Processed Stripe event IDs for webhook idempotency. |
+| `cache`, `jobs`, `sessions`, `password_reset_tokens` | Framework tables (cache, database queue, sessions, auth). |
+
+### Tenant database (per workspace)
+
+| Table | Purpose |
+| --- | --- |
+| `clients` | Workspace clients (soft-archivable). |
+| `invoices` | Invoices with status, totals, payment fields, reminder fields, and `paid_at`. |
+| `invoice_items` | Line items belonging to an invoice. |
+| `invoice_number_sequences` | Locked per-tenant invoice number counter. |
+| `activity_logs` | Workspace activity feed for billing, clients, invoices, reminders, payments, and team changes. |
+
+---
+
+## API Endpoints
+
+### Central routes (`routes/web.php`)
 
 ```txt
 /                         Landing page
@@ -141,7 +249,7 @@ Central routes are registered in `routes/web.php`:
 /admin                    Filament admin panel
 ```
 
-Tenant routes are registered in `routes/tenant.php` and loaded by `App\Providers\TenancyServiceProvider`:
+### Tenant routes (`routes/tenant.php`)
 
 ```txt
 /dashboard                         Workspace dashboard
@@ -160,74 +268,11 @@ Tenant routes are registered in `routes/tenant.php` and loaded by `App\Providers
 /pay/{token}/intent                Public Payment Intent endpoint (throttle: 10/min)
 ```
 
-Tenant routes use:
-
-- `InitializeTenancyByDomain`
-- `PreventAccessFromCentralDomains`
-- `tenant.member`
-- `subscribed` for protected product routes
-
-The public invoice payment routes are tenant routes, but they do not require login.
+Tenant routes use `InitializeTenancyByDomain`, `PreventAccessFromCentralDomains`, `tenant.member`, and `subscribed` (for protected product routes). The public invoice payment routes are tenant routes but do not require login.
 
 ---
 
-## Plan Limits
-
-Plan limits are enforced at creation time by `PlanLimitsService`, called from `CreateClient` and `CreateInvoice`.
-
-| Plan | Client limit | Invoice limit |
-| --- | --- | --- |
-| Free | 3 total | 5 per month |
-| Pro | Unlimited | Unlimited |
-| Business | Unlimited | Unlimited |
-
-When a limit is exceeded, `PlanLimitExceededException` is thrown and the global exception handler redirects back with a user-facing error message. Existing data is never deleted or hidden on downgrade — limits only gate new creation.
-
----
-
-## Roles And Permissions
-
-Roles and permissions are central-database records powered by `spatie/laravel-permission`.
-
-Current roles:
-
-| Role | Access |
-| --- | --- |
-| `owner` | Receives every workspace permission. |
-| `member` | Can view activity and billing, create/update/view clients and invoices, send invoices, and send reminders. Cannot manage team, manage billing, or delete clients/invoices. |
-
-Current permission groups:
-
-- `activity.view`
-- `billing.view`
-- `billing.manage`
-- `clients.view`
-- `clients.create`
-- `clients.update`
-- `clients.delete`
-- `invoices.view`
-- `invoices.create`
-- `invoices.update`
-- `invoices.delete`
-- `invoices.send`
-- `invoices.remind`
-- `team.view`
-- `team.manage`
-
-Server-side enforcement currently uses:
-
-- `ClientPolicy`
-- `InvoicePolicy`
-- Gates for billing, team, and activity workspace abilities
-- shared Inertia permission props for UI visibility
-
-Frontend gating uses shared Inertia `permissions` props from `HandleInertiaRequests`. Treat those props as UI visibility only; policies and server checks are the real enforcement layer.
-
-Team members do not inherit the owner's billing plan. Their `plan` column is always `null`. `EnsureSubscribed` checks the workspace owner's subscription when a member's own plan is null — this is the correct and intended path.
-
----
-
-## Local Setup
+## Getting Started
 
 ### Prerequisites
 
@@ -238,14 +283,14 @@ Team members do not inherit the owner's billing plan. Their `plan` column is alw
 - Laravel Herd for local `.test` domains
 - Stripe CLI for local webhook forwarding
 
-### 1. Install Dependencies
+### 1. Install dependencies
 
 ```bash
 composer install
 bun install
 ```
 
-### 2. Create Environment File
+### 2. Create environment file
 
 ```bash
 cp .env.example .env
@@ -294,191 +339,79 @@ MAIL_MAILER=log
 MAIL_FROM_ADDRESS=hello@billable.test
 ```
 
-Adjust PostgreSQL username and password for your machine. Normal local development should use the named `central` connection; do not switch the app to default SQLite unless you intentionally rework tenancy and test configuration.
+Adjust PostgreSQL credentials for your machine. Use the named `central` connection for local development; do not switch the app to default SQLite unless you intentionally rework tenancy and test configuration. In production, set `SESSION_SECURE_COOKIE=true` and `APP_DEBUG=false`.
 
-In production, set `SESSION_SECURE_COOKIE=true` and `APP_DEBUG=false`.
-
-### 3. Create Databases
-
-Create the central database before running migrations:
+### 3. Create databases
 
 ```bash
-createdb billable
-```
-
-If you plan to run the current PHPUnit suite locally, also create the test database expected by `phpunit.xml`:
-
-```bash
-createdb billable_test
+createdb billable        # central database
+createdb billable_test   # required to run the PHPUnit suite locally
 ```
 
 Tenant databases are created automatically by Stancl Tenancy when a workspace is created.
 
-### 4. Configure Local Domains
+### 4. Configure local domains
 
-With Laravel Herd:
+With Laravel Herd: open Herd, make sure `/Users/syahmirazak/Sites` is parked, confirm `billable` is available as `billable.test`, and secure the site for `https`.
 
-1. Open Herd.
-2. Make sure `/Users/syahmirazak/Sites` is parked.
-3. Make sure the `billable` site is available as `billable.test`.
-4. Secure the site if you want to use `https://billable.test`.
-
-If tenant subdomains do not resolve automatically, add the central and tenant domains you need to `/etc/hosts`:
+If tenant subdomains do not resolve automatically, add them to `/etc/hosts`:
 
 ```txt
 127.0.0.1 billable.test
 127.0.0.1 acme-studio.billable.test
 ```
 
-Add more tenant domains as you create more workspaces.
-
-### 5. Run Migrations And Seeders
+### 5. Run migrations and seeders
 
 ```bash
 php artisan migrate
 php artisan db:seed
 ```
 
-Seeders create:
+Seeders create default plans, default roles and permissions, and a default super admin. Paid plan Stripe Price IDs are read from `STRIPE_PRICE_PRO` and `STRIPE_PRICE_BUSINESS` (blank values won't overwrite existing IDs; production values can also be managed in Filament).
 
-- default plans
-- default roles and permissions
-- default super admin user
-
-Paid plan Stripe Price IDs are read from `STRIPE_PRICE_PRO` and `STRIPE_PRICE_BUSINESS`. If those values are blank, seeders will not overwrite existing paid plan Price IDs; production values can also be managed in Filament.
-
-When a new workspace is created through onboarding, Stancl Tenancy creates that tenant database and runs tenant migrations from `database/migrations/tenant`.
-
-### 6. Run Frontend Assets
-
-For active frontend development:
+### 6. Run frontend assets
 
 ```bash
-bun run dev
+bun run dev     # active development
+bun run build   # compiled production assets
 ```
 
-For compiled production assets:
-
-```bash
-bun run build
-```
-
-Herd serves Laravel while Vite serves frontend assets during development.
-
-### 7. Forward Stripe Webhooks
-
-The app has two Stripe webhook endpoints:
-
-```txt
-https://billable.test/stripe/webhook
-https://billable.test/stripe/invoice-webhook
-```
-
-Use `STRIPE_WEBHOOK_SECRET` for the Cashier subscription endpoint. Use `STRIPE_INVOICE_WEBHOOK_SECRET` for the custom invoice-payment endpoint. If `STRIPE_INVOICE_WEBHOOK_SECRET` is blank, the invoice webhook falls back to `STRIPE_WEBHOOK_SECRET` for simpler one-secret local setups.
-
-Both endpoints fail closed when the required signing secret is missing, so do not leave `STRIPE_WEBHOOK_SECRET` blank while testing Stripe callbacks.
-
-For local development with two Stripe CLI listeners, run one listener per endpoint and copy each printed `whsec_...` value into the matching environment variable:
+### 7. Forward Stripe webhooks
 
 ```bash
 stripe listen --forward-to https://billable.test/stripe/webhook
 stripe listen --events payment_intent.succeeded --forward-to https://billable.test/stripe/invoice-webhook
 ```
 
-After changing webhook secrets in `.env`, clear cached config if needed:
+Use `STRIPE_WEBHOOK_SECRET` for the Cashier endpoint and `STRIPE_INVOICE_WEBHOOK_SECRET` for the custom invoice endpoint (it falls back to `STRIPE_WEBHOOK_SECRET` if blank). Run `php artisan config:clear` after changing secrets.
 
-```bash
-php artisan config:clear
-```
-
----
-
-## Default Credentials
+### Default credentials
 
 | Role | Email | Password |
 | --- | --- | --- |
 | Super Admin | `admin@billable.test` | `password` |
 
-Open the admin panel at:
+Open the admin panel at `https://billable.test/admin`. Only users with `is_admin = true` can access Filament.
 
-```txt
-https://billable.test/admin
-```
-
-Only users with `is_admin = true` can access Filament.
-
----
-
-## Useful Commands
-
-Use these manually when needed:
+### Useful commands
 
 ```bash
-# Run queue, logs, and Vite together
-composer run dev
-
-# Run Vite only
-bun run dev
-
-# Build frontend assets
-bun run build
-
-# Format PHP files
-./vendor/bin/pint
-
-# Check PHP formatting without changing files
-./vendor/bin/pint --test
-
-# Run the full test suite (requires billable_test PostgreSQL database)
-php artisan test
-
-# Mark all sent invoices past their due date as overdue (runs automatically at 00:01)
-php artisan invoices:mark-overdue
-
-# Send invoice reminders for due and overdue invoices (runs automatically at 09:00)
-php artisan invoices:send-reminders
-
-# Backfill missing payment tokens on invoices created before the payment_token column was added
-# Run once in production if any invoice has a NULL payment_token
-php artisan invoices:backfill-tokens
-
-# List all app routes
+composer run dev                   # queue, logs, and Vite together
+./vendor/bin/pint                  # format PHP files
+./vendor/bin/pint --test           # check formatting only
+php artisan test                   # full suite (requires billable_test)
+php artisan invoices:mark-overdue  # auto-runs daily at 00:01
+php artisan invoices:send-reminders# auto-runs daily at 09:00
+php artisan invoices:backfill-tokens # one-time payment_token repair
 php artisan route:list --except-vendor
-
-# List central billing routes
-php artisan route:list --path=plans --except-vendor
-
-# List tenant billing routes
-php artisan route:list --path=billing --except-vendor
 ```
 
----
+### Testing and CI
 
-## Testing And CI Notes
+`phpunit.xml` uses `CENTRAL_DB_DATABASE=billable_test` on the `pgsql` connection, so a PostgreSQL `billable_test` database is required. The suite (47 tests) covers invoice totals/status logic, enums, landing/SEO/routing boundaries, Stripe webhook idempotency and signatures, register plan-intent preservation, tenant isolation, plan limit enforcement, CSV export, and the Cashier cancellation webhook.
 
-The current `phpunit.xml` uses:
-
-```env
-DB_CONNECTION=central
-CENTRAL_DB_CONNECTION=pgsql
-CENTRAL_DB_DATABASE=billable_test
-```
-
-So local tests need a PostgreSQL `billable_test` database unless the test configuration is changed.
-
-The test suite currently has 47 tests across unit and feature layers covering:
-
-- Invoice totals and status logic
-- Permission and subscription status enums
-- Landing page, SEO routes, and routing boundary assertions
-- Stripe invoice webhook idempotency and signature verification
-- Register plan intent preservation
-- Tenant isolation — cross-tenant client, invoice, and payment token access
-- Plan limit enforcement for Free plan client and invoice caps
-- Invoice CSV export including content verification and status filtering
-- Cashier subscription cancellation webhook plan reset and cache clearing
-
-GitHub Actions is configured in `.github/workflows/ci.yml` with a PostgreSQL 17 service that creates `billable_test`, then runs:
+GitHub Actions (`.github/workflows/ci.yml`) spins up a PostgreSQL 17 service, then runs:
 
 ```bash
 ./vendor/bin/pint --test
@@ -486,156 +419,41 @@ php artisan test
 bun run build
 ```
 
----
+### Troubleshooting
 
-## Project Structure
-
-```txt
-app/
-├── Actions/
-│   ├── Activity/
-│   ├── Auth/
-│   ├── Billing/
-│   ├── Client/
-│   ├── Invoice/
-│   ├── Team/
-│   └── Tenant/
-├── Concerns/
-├── Enums/
-├── Exceptions/
-├── Filament/
-│   ├── Resources/
-│   └── Widgets/
-├── Http/
-│   ├── Controllers/
-│   │   ├── Auth/
-│   │   ├── Billing/
-│   │   ├── Payment/
-│   │   ├── Seo/
-│   │   ├── Stripe/
-│   │   └── Tenant/
-│   ├── Middleware/
-│   └── Requests/
-├── Jobs/
-│   └── Invoice/
-├── Mail/
-├── Models/
-├── Policies/
-├── Providers/
-├── Queries/
-│   └── Tenant/
-├── Services/
-├── Support/
-└── ViewModels/
-    └── Tenant/
-
-database/
-├── migrations/
-├── migrations/tenant/
-└── seeders/
-
-resources/js/
-├── Components/
-├── Layouts/
-└── Pages/
-    ├── Auth/
-    ├── Billing/
-    ├── Onboarding/
-    ├── Payment/
-    └── Tenant/
-
-routes/
-├── web.php
-├── tenant.php
-└── console.php
-```
+- **`billable.test/dashboard` returns 404** — Expected. `/dashboard` is a tenant route; use `https://acme-studio.billable.test/dashboard`.
+- **Tenant page blank, assets load from `/tenancy/assets/...`** — Ensure `ViteBundler` is enabled in `config/tenancy.php`, then `bun run build`. Assets should load from `/build/assets/...`.
+- **Permission changes don't appear** — Spatie caches roles/permissions. `.env.example` uses `PERMISSION_CACHE_STORE=array`; with another store, clear cache after changes.
+- **Tests can't connect to the database** — `createdb billable_test` or update `phpunit.xml` intentionally.
+- **Tenant subdomain doesn't resolve** — Add it to `/etc/hosts` or your local DNS/Herd setup.
+- **Owner cancels subscription but members still have access** — `customer.subscription.deleted` resets the owner's plan and clears caches. If it persists, manually clear `tenant_owner_{id}` and `tenant_owner_plan_{id}` and verify the Cashier webhook secret.
+- **An invoice shows no payment URL** — It predates the `payment_token` column. Run `php artisan invoices:backfill-tokens` once.
 
 ---
 
-## Important Implementation Notes
+## What I Learned
 
-- `config/tenancy.php` defines `billable.test`, `localhost`, and `127.0.0.1` as central domains.
-- `routes/tenant.php` is loaded by `App\Providers\TenancyServiceProvider`.
-- Tenant identification uses `InitializeTenancyByDomain` and `PreventAccessFromCentralDomains`.
-- `tenant.active` blocks all tenant routes when a workspace is suspended.
-- `tenants.name` and `tenants.is_suspended` are real central database columns, not only values in Stancl's `data` JSON.
-- `Stancl\Tenancy\Features\ViteBundler::class` is enabled so tenant pages use normal Vite build assets.
-- `asset_helper_tenancy` is still enabled for tenant-aware asset calls, but Vite assets should resolve through the Vite integration.
-- `App\Support\AppUrl` builds central URLs, tenant domains, and tenant URLs from `APP_URL`.
-- `App\Actions\Tenant\CreateWorkspace` stores the full tenant domain in the `domains` table.
-- `App\Concerns\HasTenantAccess` resolves tenant membership, owner checks, permissions, and tenant URLs.
-- Workspace billing, team, and activity authorization is mapped through Gates in `App\Providers\AppServiceProvider`.
-- `CreateInvoice` and `UpdateInvoice` wrap multi-table invoice writes in database transactions.
-- `CreateClient` and `CreateInvoice` both call `PlanLimitsService` before writing — Free plan tenants are hard-stopped at 3 clients and 5 invoices/month. Pro and Business have no limits.
-- Tenant invoice numbers are issued from `invoice_number_sequences` with `lockForUpdate()` instead of `count() + 1`.
-- `App\Support\InvoiceTotals` centralizes invoice total math.
-- `App\Http\Controllers\Stripe\CashierWebhookController` extends Cashier's built-in `WebhookController`. It adds a `handleCustomerSubscriptionDeleted` override that resets `user.plan` to `null` and clears the `tenant_owner_plan_*` and `tenant_owner_*` cache keys when a subscription is cancelled via the Stripe billing portal.
-- `EnsureSubscribed` caches the workspace owner lookup per tenant for 5 minutes. Clear `tenant_owner_{id}` from cache if subscription state must propagate immediately.
-- `PlanLimitsService` caches the owner plan lookup per tenant for 5 minutes under `tenant_owner_plan_{id}`.
-- Paid plan Stripe Price IDs are configured through `config/billing.php` from `STRIPE_PRICE_PRO` and `STRIPE_PRICE_BUSINESS`.
-- The custom invoice Stripe webhook reads `STRIPE_INVOICE_WEBHOOK_SECRET`, falling back to `STRIPE_WEBHOOK_SECRET` when a separate invoice secret is not configured.
-- The Cashier subscription webhook is guarded by `EnsureCashierWebhookSecretIsConfigured` so a missing `STRIPE_WEBHOOK_SECRET` does not leave it unsigned.
-- SEO defaults live in `config/seo.php` and are shared with Inertia through `HandleInertiaRequests`.
-- `routes/console.php` registers and schedules `invoices:mark-overdue` (daily at `00:01`) and `invoices:send-reminders` (daily at `09:00`), both with `withoutOverlapping()`. A one-time `invoices:backfill-tokens` command is also registered for production data repair.
-- Invoice emails, reminder emails, and receipt emails are queued through `app/Jobs/Invoice` with `$tries = 3` and exponential backoff of `[30, 60, 120]` seconds.
-- Database queue jobs use `DB_QUEUE_CONNECTION`, which should stay on the central connection for tenant apps.
-- Auth routes (login, register, forgot/reset password) are rate limited. See `routes/web.php` for per-route throttle values.
-- Team members do not inherit the workspace owner's billing plan. The `plan` column on team member rows is always `null`. `EnsureSubscribed` falls through to the owner lookup when a member's own plan is null.
+- **Domain-based multi-tenancy** with `stancl/tenancy`: separating central vs tenant routes, databases, and middleware, and keeping queue/cache on the central connection.
+- **Stripe end to end**: Cashier subscriptions plus a custom tenant-aware Payment Intent webhook, with idempotency (`stripe_events`) and fail-closed signature verification.
+- **Enforcing plan limits cleanly** through a single service and a global exception handler instead of scattering checks across controllers.
+- **Concurrency-safe invoice numbering** using a locked sequence row (`lockForUpdate()`) rather than `count() + 1`.
+- **Thin controllers** via an Actions/Queries/Services/ViewModels structure, keeping business logic testable and out of the HTTP layer.
+- **Cache invalidation across tenants** when an owner's subscription state changes.
 
 ---
 
-## Troubleshooting
+## Future Improvements
 
-### `billable.test/dashboard` returns 404
-
-That is expected. `/dashboard` is not a central route. Open the tenant domain instead:
-
-```txt
-https://acme-studio.billable.test/dashboard
-```
-
-### Tenant page is blank and assets load from `/tenancy/assets/...`
-
-Check that `Stancl\Tenancy\Features\ViteBundler::class` is enabled in `config/tenancy.php`, then rebuild assets when needed:
-
-```bash
-bun run build
-```
-
-Tenant pages should load Vite assets from `/build/assets/...`.
-
-### Permission changes do not appear
-
-Roles and permissions are cached by Spatie. This project uses `PERMISSION_CACHE_STORE=array` in `.env.example` for local friendliness. If a non-array cache store is used, clear permission/cache state after changing roles or permissions.
-
-### Tests cannot connect to the database
-
-Create the expected test database or update `phpunit.xml` intentionally:
-
-```bash
-createdb billable_test
-```
-
-### Tenant subdomain does not resolve
-
-Add the tenant domain to `/etc/hosts` or configure your local DNS/Herd setup:
-
-```txt
-127.0.0.1 acme-studio.billable.test
-```
-
-### A workspace owner cancels their subscription but team members still have access
-
-This should not happen with the current implementation. `customer.subscription.deleted` resets the owner's plan and clears subscription caches. If the issue persists, manually clear the `tenant_owner_{id}` and `tenant_owner_plan_{id}` cache keys and verify the Cashier webhook secret is correctly configured.
-
-### An invoice shows no payment URL
-
-The invoice was likely created before the `payment_token` column was added. Run the backfill command once to repair all affected rows:
-
-```bash
-php artisan invoices:backfill-tokens
-```
+- Multi-currency and tax-rate configuration per workspace.
+- Recurring/subscription invoices and partial payments.
+- Invoice templates and brand customization (logo, colors).
+- Client-facing portal to view invoice history and download receipts.
+- Webhook/event log UI in the admin panel for easier debugging.
+- Expanded test coverage for tenant billing edge cases and broader end-to-end flows.
+- Audit log export and per-workspace usage analytics.
 
 ---
 
-Built by [syahmidev](https://github.com/syahmidev)
+## License
+
+Built for learning and portfolio purposes by [syahmidev](https://www.syahmidev.com).
